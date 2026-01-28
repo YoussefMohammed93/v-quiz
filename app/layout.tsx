@@ -2,9 +2,7 @@ import "./globals.css";
 
 import type { Metadata } from "next";
 
-import { Header } from "@/components/header";
 import { Geist_Mono } from "next/font/google";
-import { SmoothScroll } from "@/components/smooth-scroll";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const geistMono = Geist_Mono({
@@ -29,13 +27,11 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          forcedTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
-          <SmoothScroll>
-            <Header />
-            {children}
-          </SmoothScroll>
+          {children}
         </ThemeProvider>
       </body>
     </html>

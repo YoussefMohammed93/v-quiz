@@ -10,12 +10,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        app: "bg-primary border-primary text-primary-foreground hover:bg-primary/80 hover:shadow-primary/40 [clip-path:none]",
         default:
           "bg-primary border-primary text-primary-foreground [&>[data-border]]:bg-primary-foreground/30 [box-shadow:0_0_20px_0px_rgba(255,199,0,0.2)] hover:bg-primary/90 hover:shadow-primary/40",
         ghost:
           "border-transparent bg-transparent hover:bg-secondary hover:text-foreground [&>[data-border]]:hidden",
         outline:
           "border-primary bg-secondary/50 text-foreground hover:bg-secondary [&>[data-border]]:bg-primary",
+        outlineApp:
+          "border border-border/45 bg-muted/15 text-foreground hover:bg-muted/25 [clip-path:none]",
         link: "text-primary underline-offset-4 hover:underline border-none bg-transparent [&>[data-border]]:hidden",
       },
       size: {

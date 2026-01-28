@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import Link from "next/link";
+import Image from "next/image";
 
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
@@ -93,10 +94,13 @@ export const MobileMenu = ({ className }: MobileMenuProps) => {
           <div className="container mx-auto flex h-full flex-col">
             <div className="flex items-center justify-between py-6 pt-12">
               <Dialog.Title className="sr-only">Menu</Dialog.Title>
-              <div /> {/* Spacer for flex-end */}
+              <div className="flex items-center gap-3">
+                <Image src="./logo.svg" alt="Logo" width={50} height={50} />
+                <h2 className="text-4xl font-mono">Vquiz</h2>
+              </div>
               <Dialog.Close asChild>
                 <button
-                  className="p-2 text-foreground hover:text-primary transition-colors"
+                  className="cursor-pointer p-2 text-foreground hover:text-primary transition-colors"
                   aria-label="Close menu"
                 >
                   <X size={24} />
