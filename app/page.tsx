@@ -3,6 +3,7 @@
 import { Leva } from "leva";
 import { FAQ } from "@/components/faq";
 import { Hero } from "@/components/hero";
+import { Footer } from "@/components/footer";
 import { Pricing } from "@/components/pricing";
 import { Features } from "@/components/features";
 import { HowItWorks } from "@/components/how-it-works";
@@ -18,6 +19,7 @@ export default function Home() {
         <Features />
         <Pricing />
         <FAQ />
+        <Footer />
       </main>
       <Leva hidden />
     </>
