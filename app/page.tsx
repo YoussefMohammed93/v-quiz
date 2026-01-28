@@ -1,6 +1,7 @@
 "use client";
 
 import { Leva } from "leva";
+import { FAQ } from "@/components/faq";
 import { Hero } from "@/components/hero";
 import { Pricing } from "@/components/pricing";
 import { Features } from "@/components/features";
@@ -16,6 +17,7 @@ export default function Home() {
         <Storytelling />
         <Features />
         <Pricing />
+        <FAQ />
       </main>
       <Leva hidden />
     </>
