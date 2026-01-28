@@ -9,6 +9,8 @@ import { Features } from "@/components/features";
 import { HowItWorks } from "@/components/how-it-works";
 import { Storytelling } from "@/components/storytelling";
 
+import { ScrollToTop } from "@/components/scroll-to-top";
+
 export default function Home() {
   return (
     <>
@@ -21,6 +23,7 @@ export default function Home() {
         <FAQ />
         <Footer />
       </main>
+      <ScrollToTop />
       <Leva hidden />
     </>
   );
