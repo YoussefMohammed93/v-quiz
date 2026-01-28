@@ -42,10 +42,14 @@ export function HowItWorks() {
         scrollTrigger: {
           trigger: containerRef.current,
           pin: true,
-          scrub: 0.5, // Tighter scrub for "faster" feel
-          snap: 1 / (panels.length - 1),
-          end: () =>
-            "+=" + containerRef.current!.offsetWidth * (panels.length - 0.5),
+          scrub: 1,
+          snap: {
+            snapTo: 1 / (panels.length - 1),
+            duration: { min: 0.2, max: 0.5 },
+            delay: 0,
+            ease: "power1.inOut",
+          },
+          end: () => "+=" + containerRef.current!.offsetWidth * 1.5,
         },
       });
 

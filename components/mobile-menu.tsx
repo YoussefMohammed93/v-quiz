@@ -22,18 +22,23 @@ export const MobileMenu = ({ className }: MobileMenuProps) => {
 
   useEffect(() => {
     if (isOpen) {
+      const scrollBarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollBarWidth}px`;
     } else {
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     }
     return () => {
       document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     };
   }, [isOpen]);
 
   const menuItems = [
-    { name: "Product", href: "#product" },
     { name: "How it works", href: "#how-it-works" },
+    { name: "Product", href: "#product" },
     { name: "Features", href: "#features" },
     { name: "Pricing", href: "#pricing" },
     { name: "FAQ", href: "#faq" },
@@ -66,57 +71,62 @@ export const MobileMenu = ({ className }: MobileMenuProps) => {
       <Dialog.Trigger asChild>
         <button
           className={cn(
-            "group lg:hidden p-2 text-foreground transition-colors",
+            "p-2 text-foreground transition-colors lg:hidden",
             className,
           )}
           aria-label="Open menu"
         >
-          <Menu className="group-data-[state=open]:hidden" size={24} />
-          <X className="hidden group-data-[state=open]:block" size={24} />
+          <Menu size={24} />
         </button>
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <div
-          data-overlay="true"
-          className="fixed z-30 inset-0 bg-black/50 backdrop-blur-sm"
-        />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 
         <Dialog.Content
-          onInteractOutside={(e) => {
-            if (
-              e.target instanceof HTMLElement &&
-              e.target.dataset.overlay !== "true"
-            ) {
-              e.preventDefault();
-            }
+          onInteractOutside={() => {
+            // Prevent closing when clicking outside if needed,
+            // but Radix usually handles this well.
           }}
-          className="fixed top-0 left-0 w-full z-40 py-28 md:py-40"
+          className="fixed top-0 left-0 z-50 h-screen w-full bg-background/95 backdrop-blur-md transition-all duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top"
         >
-          <Dialog.Title className="sr-only">Menu</Dialog.Title>
-
-          <nav className="flex flex-col space-y-6 container mx-auto">
-            {menuItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={(e) => handleLinkClick(e, item.href)}
-                className="text-xl font-mono uppercase text-foreground/60 transition-colors ease-out duration-150 hover:text-foreground py-2"
-              >
-                {item.name}
-              </Link>
-            ))}
-
-            <div className="mt-6">
-              <Link
-                href="/#signup"
-                onClick={(e) => handleLinkClick(e, "#signup")}
-                className="inline-block text-xl font-mono uppercase text-primary transition-colors ease-out duration-150 hover:text-primary/80 py-2"
-              >
-                Get Started
-              </Link>
+          <div className="container mx-auto flex h-full flex-col">
+            <div className="flex items-center justify-between py-6 pt-12">
+              <Dialog.Title className="sr-only">Menu</Dialog.Title>
+              <div /> {/* Spacer for flex-end */}
+              <Dialog.Close asChild>
+                <button
+                  className="p-2 text-foreground hover:text-primary transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X size={24} />
+                </button>
+              </Dialog.Close>
             </div>
-          </nav>
+
+            <nav className="flex flex-col space-y-8 mt-12">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => handleLinkClick(e, item.href)}
+                  className="text-2xl font-mono uppercase text-foreground/60 transition-colors ease-out duration-150 hover:text-foreground py-2 border-b border-border/50"
+                >
+                  {item.name}
+                </Link>
+              ))}
+
+              <div className="mt-8">
+                <Link
+                  href="/#signup"
+                  onClick={(e) => handleLinkClick(e, "#signup")}
+                  className="inline-block text-2xl font-mono uppercase text-primary transition-colors ease-out duration-150 hover:text-primary/80 py-2"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </nav>
+          </div>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

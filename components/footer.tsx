@@ -176,21 +176,21 @@ export function Footer() {
             <div className="social-container flex gap-4">
               <Link
                 href="#"
-                className="footer-social size-10 bg-secondary/20 border-2 border-border rounded-full flex items-center justify-center hover:border-primary/70 transition-colors"
+                className="footer-social group size-10 bg-secondary/20 border-2 border-border rounded-full flex items-center justify-center hover:border-primary/70 transition-colors"
               >
-                <Twitter className="size-4 text-foreground/60" />
+                <Twitter className="size-4 text-foreground/60 group-hover:text-primary transition-colors" />
               </Link>
               <Link
                 href="#"
-                className="footer-social size-10 bg-secondary/20 border-2 border-border rounded-full flex items-center justify-center hover:border-primary/70 transition-colors"
+                className="footer-social group size-10 bg-secondary/20 border-2 border-border rounded-full flex items-center justify-center hover:border-primary/70 transition-colors"
               >
-                <Github className="size-4 text-foreground/60" />
+                <Github className="size-4 text-foreground/60 group-hover:text-primary transition-colors" />
               </Link>
               <Link
                 href="#"
-                className="footer-social size-10 bg-secondary/20 border-2 border-border rounded-full flex items-center justify-center hover:border-primary/70 transition-colors"
+                className="footer-social group size-10 bg-secondary/20 border-2 border-border rounded-full flex items-center justify-center hover:border-primary/70 transition-colors"
               >
-                <Linkedin className="size-4 text-foreground/60" />
+                <Linkedin className="size-4 text-foreground/60 group-hover:text-primary transition-colors" />
               </Link>
             </div>
           </div>
