@@ -10,6 +10,7 @@ import { MobileMenu } from "./mobile-menu";
 import { useEffect, useRef, useState } from "react";
 import { ScrollTrigger } from "gsap/dist/ScrollTrigger";
 import { ScrollToPlugin } from "gsap/dist/ScrollToPlugin";
+import { SignUpButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
@@ -104,12 +105,25 @@ export const Header = () => {
             </Link>
           ))}
         </nav>
-        <div className="max-lg:hidden header-item">
+        <div className="max-lg:hidden flex items-center gap-x-2 header-item">
           <Link href="/#signup">
             <Button size="sm" className="h-10 px-4 font-mono uppercase text-xs">
               Get Started
             </Button>
           </Link>
+          <header className="flex justify-end items-center p-4 gap-4 h-16">
+            <SignedOut>
+              <Button
+                variant="app"
+                className="h-10 px-4 font-mono uppercase text-xs"
+              >
+                <SignUpButton />
+              </Button>
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
         </div>
         <div className="lg:hidden flex items-center gap-x-2 header-item">
           <MobileMenu />
