@@ -13,7 +13,6 @@ import { ScrollToTop } from "@/components/scroll-to-top";
 import { SmoothScroll } from "@/components/smooth-scroll";
 
 export default function Home() {
-
   return (
     <SmoothScroll>
       <main className="relative bg-background">
