@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import Link from "next/link";
+import { SignUpButton } from "@clerk/nextjs";
 
 import { GL } from "./gl";
 import { Pill } from "./pill";
@@ -53,7 +54,7 @@ export function Hero() {
         </h1>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 gsap-reveal w-full sm:w-auto">
-          <Link href="/#signup" className="w-full sm:w-auto">
+          <SignUpButton mode="modal" forceRedirectUrl="/app">
             <Button
               className="w-full sm:w-auto hover:bg-primary/90 transition-all duration-300"
               onMouseEnter={() => setHovering(true)}
@@ -61,7 +62,7 @@ export function Hero() {
             >
               Start for free
             </Button>
-          </Link>
+          </SignUpButton>
           <Link href="/#demo" className="w-full sm:w-auto">
             <Button
               variant="link"

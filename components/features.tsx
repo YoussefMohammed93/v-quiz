@@ -1,7 +1,7 @@
 "use client";
 
 import gsap from "gsap";
-import Link from "next/link";
+import { SignUpButton } from "@clerk/nextjs";
 
 import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -129,7 +129,7 @@ export function Features() {
                   {feature.title}
                 </h3>
 
-                <p className="font-mono text-base text-foreground/60 leading-relaxed mb-10 flex-grow">
+                <p className="font-mono text-base text-foreground/60 leading-relaxed mb-10 grow">
                   {feature.description}
                 </p>
 
@@ -147,14 +147,14 @@ export function Features() {
 
         {/* Section CTA */}
         <div className="features-cta mt-20 md:mt-24">
-          <Link href="/#signup">
+          <SignUpButton mode="modal" forceRedirectUrl="/app">
             <Button
               size="sm"
               className="h-16 px-10 font-mono uppercase text-lg"
             >
               Get Started
             </Button>
-          </Link>
+          </SignUpButton>
         </div>
       </div>
     </section>

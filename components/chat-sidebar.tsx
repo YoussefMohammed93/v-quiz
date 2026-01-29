@@ -28,6 +28,7 @@ import type { Chat } from "@/app/app/types";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserButton } from "@clerk/nextjs";
 
 type ChatSidebarProps = {
   chats: Chat[];
@@ -269,6 +270,7 @@ export function ChatSidebar({
 
       {/* Bottom Section: Usage & User Profile */}
       <div className={cn(isCollapsed ? "mb-4" : "")}>
+        <UserButton />
         {/* User Profile */}
         <div className={cn("p-2", !isCollapsed && "border-t border-border/45")}>
           <div

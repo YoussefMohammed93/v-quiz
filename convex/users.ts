@@ -27,7 +27,7 @@ export const upsertFromClerk = internalMutation({
   args: { data: v.any() as Validator<UserJSON> },
   async handler(ctx, { data }) {
     const userAttributes = {
-      email: data.email_addresses[0].email_address,
+      email: data.email_addresses[0]?.email_address,
       clerkUserId: data.id,
       imageUrl: data.image_url ?? undefined,
       firstName: data.first_name ?? undefined,

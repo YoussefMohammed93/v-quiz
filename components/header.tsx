@@ -2,6 +2,7 @@
 
 import gsap from "gsap";
 import Link from "next/link";
+import { SignUpButton } from "@clerk/nextjs";
 
 import { Logo } from "./logo";
 import { cn } from "@/lib/utils";
@@ -105,11 +106,11 @@ export const Header = () => {
           ))}
         </nav>
         <div className="max-lg:hidden header-item">
-          <Link href="/#signup">
+          <SignUpButton mode="modal" forceRedirectUrl="/app">
             <Button size="sm" className="h-10 px-4 font-mono uppercase text-xs">
               Get Started
             </Button>
-          </Link>
+          </SignUpButton>
         </div>
         <div className="lg:hidden flex items-center gap-x-2 header-item">
           <MobileMenu />
