@@ -42,5 +42,4 @@ export type Message = {
   isStreaming?: boolean;
   isSummary?: boolean;
   summaryData?: QuizSummaryData;
-  imageUrl?: string;
 };

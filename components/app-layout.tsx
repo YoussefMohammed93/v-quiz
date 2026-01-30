@@ -6,12 +6,14 @@ import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { Menu, Sparkle, Edit2 } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
+import { ChatHeaderSkeleton } from "@/components/chat-skeletons";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 type AppLayoutProps = {
   chats: Chat[];
   currentChatId: Id<"chats"> | null;
   chatTitle: string;
+  isChatLoading?: boolean;
   onNewChat: () => void;
   onSelectChat: (chatId: Id<"chats">) => void;
   onRenameChat: (chatId: Id<"chats">) => void;
@@ -19,6 +21,7 @@ type AppLayoutProps = {
   dailyUsed: number;
   dailyLimit: number;
   onUpgrade: () => void;
+  // ... other props
   onOpenSearch: () => void;
   userProfile: {
     name: string;
@@ -35,6 +38,7 @@ export function AppLayout({
   chats,
   currentChatId,
   chatTitle,
+  isChatLoading,
   onNewChat,
   onSelectChat,
   onRenameChat,
@@ -94,7 +98,7 @@ export function AppLayout({
       {/* Desktop Sidebar */}
       <aside
         className={`hidden md:block shrink-0 transition-all duration-300 ease-in-out ${
-          isCollapsed ? "w-[80px]" : "w-80"
+          isCollapsed ? "w-[80px]" : "w-72"
         }`}
       >
         <ChatSidebar {...sidebarProps} />
@@ -119,17 +123,23 @@ export function AppLayout({
             </Sheet>
 
             {/* Chat Title */}
-            <div className="flex items-center gap-2 pl-2 md:pl-0 truncate">
-              <h2 className="text-lg font-semibold text-foreground truncate">
-                {chatTitle}
-              </h2>
-              {currentChatId && chatTitle !== "New Chat" && (
-                <button
-                  className="cursor-pointer flex items-center justify-center size-8 rounded-full text-muted-foreground hover:bg-muted/30 hover:text-foreground shrink-0"
-                  onClick={() => onRenameChat(currentChatId)}
-                >
-                  <Edit2 className="size-4" />
-                </button>
+            <div className="flex items-center gap-2 pl-2 md:pl-0 truncate flex-1 md:flex-none">
+              {isChatLoading ? (
+                <ChatHeaderSkeleton />
+              ) : (
+                <>
+                  <h2 className="text-lg font-semibold text-foreground truncate">
+                    {chatTitle}
+                  </h2>
+                  {currentChatId && chatTitle !== "New Chat" && (
+                    <button
+                      className="cursor-pointer flex items-center justify-center size-8 rounded-full text-muted-foreground hover:bg-muted/30 hover:text-foreground shrink-0"
+                      onClick={() => onRenameChat(currentChatId)}
+                    >
+                      <Edit2 className="size-4" />
+                    </button>
+                  )}
+                </>
               )}
             </div>
 
@@ -139,7 +149,7 @@ export function AppLayout({
               onClick={onUpgrade}
             >
               <Sparkle className="size-4 fill-current" />
-              Get Basic Plan
+              Upgrade Your Plan
             </Button>
           </div>
         </header>

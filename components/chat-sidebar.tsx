@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useClerk } from "@clerk/nextjs";
 import type { Chat } from "@/app/app/types";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -232,7 +231,7 @@ export function ChatSidebar({
                         <div className="flex-1 min-w-0 pr-6">
                           <span
                             className={cn(
-                              "block truncate text-sm transition-colors",
+                              "block truncate max-w-[210px] text-sm transition-colors",
                               isActive
                                 ? "text-foreground"
                                 : "text-muted-foreground",
@@ -293,15 +292,15 @@ export function ChatSidebar({
         <div className={cn("p-2", !isCollapsed && "border-t border-border/45")}>
           <div
             className={cn(
-              "flex items-center gap-2",
-              isCollapsed ? "justify-center" : "justify-between",
+              "flex items-center justify-center gap-2 hover:bg-muted/25 rounded-xl",
+              isCollapsed ? "p-0 bg-transparent hover:bg-transparent" : "",
             )}
           >
             <Popover>
               <PopoverTrigger asChild>
                 <div
                   className={cn(
-                    "flex items-center gap-2 rounded-lg hover:bg-secondary/50 transition-colors cursor-pointer",
+                    "w-full flex items-center gap-2 rounded-lg transition-colors cursor-pointer",
                     isCollapsed
                       ? "p-0 bg-transparent hover:bg-transparent"
                       : "p-2",
@@ -340,15 +339,15 @@ export function ChatSidebar({
                     <div className="flex-1 min-w-0 space-y-1">
                       {isLoading ? (
                         <>
-                          <Skeleton className="h-4 w-24" />
-                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-4 w-44" />
+                          <Skeleton className="h-3 w-20" />
                         </>
                       ) : (
                         <>
-                          <p className="text-[15px] font-medium text-foreground truncate max-w-[135px]">
+                          <p className="text-[15px] font-medium text-foreground truncate max-w-[200px]">
                             {userProfile?.name}
                           </p>
-                          <p className="text-[14px] text-muted truncate max-w-[135px]">
+                          <p className="text-[14px] text-muted truncate max-w-[200px]">
                             {userProfile?.plan === "pro"
                               ? "Pro Plan"
                               : userProfile?.plan === "basic"
@@ -362,9 +361,9 @@ export function ChatSidebar({
                 </div>
               </PopoverTrigger>
               <PopoverContent
-                className="w-56 p-1 ml-1 mb-2 bg-[#222] border-border/45"
+                className="w-48 p-1 ml-1 mb-2 bg-[#222] border-border/45"
                 side={isCollapsed ? "right" : "top"}
-                align={isCollapsed ? "start" : "center"}
+                align={isCollapsed ? "start" : "start"}
               >
                 <div className="space-y-1">
                   <div
@@ -372,38 +371,26 @@ export function ChatSidebar({
                     className="flex items-center gap-2 p-2 hover:bg-muted/15 rounded-md cursor-pointer transition-colors"
                   >
                     <User className="size-4 text-muted-foreground" />
-                    <span className="text-sm">Profile</span>
+                    <span className="text-sm">Your Profile</span>
                   </div>
                   <div
                     onClick={onUpgrade}
                     className="flex items-center gap-2 p-2 hover:bg-muted/15 rounded-md cursor-pointer transition-colors"
                   >
                     <ArrowUpCircle className="size-4 text-muted-foreground" />
-                    <span className="text-sm">Upgrade</span>
+                    <span className="text-sm">Upgrade Plan</span>
                   </div>
                   <div className="h-px bg-border/20 my-1" />
                   <div
                     onClick={() => signOut()}
-                    className="flex items-center gap-2 p-2 hover:bg-red-500/10 text-red-500 rounded-md cursor-pointer transition-colors"
+                    className="flex items-center gap-2 p-2 hover:bg-red-400/10 text-red-400 rounded-md cursor-pointer transition-colors"
                   >
                     <LogOut className="size-4" />
-                    <span className="text-sm">Log out</span>
+                    <span className="text-sm">Log Out</span>
                   </div>
                 </div>
               </PopoverContent>
             </Popover>
-            {!isCollapsed &&
-              (isLoading ? (
-                <Skeleton className="h-10 w-24 rounded-full" />
-              ) : (
-                <Button
-                  onClick={onUpgrade}
-                  variant="app"
-                  className="w-auto h-10 text-sm px-4 rounded-full"
-                >
-                  Upgrade
-                </Button>
-              ))}
           </div>
         </div>
       </div>

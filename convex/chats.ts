@@ -204,6 +204,8 @@ export const sendMessage = mutation({
   },
 });
 
+// ... existing code ...
+
 export const answerQuestion = mutation({
   args: {
     messageId: v.id("messages"),
@@ -235,5 +237,100 @@ export const answerQuestion = mutation({
     };
 
     await ctx.db.patch(args.messageId, { quiz: updatedQuiz });
+
+    // Check if quiz is completed
+    const allQuestionsAnswered = updatedQuiz.questions.every(
+      (q) => q.userAnswer !== undefined,
+    );
+
+    if (allQuestionsAnswered) {
+      const correctCount = updatedQuiz.questions.filter(
+        (q) => q.userAnswer === q.correctKey,
+      ).length;
+      const totalCount = updatedQuiz.questions.length;
+      const score = Math.round((correctCount / totalCount) * 100);
+
+      await ctx.db.insert("messages", {
+        chatId: message.chatId,
+        role: "assistant",
+        content: `Quiz Completed: ${updatedQuiz.topic}`,
+        createdAt: Date.now(),
+        isSummary: true,
+        summaryData: {
+          correct: correctCount,
+          total: totalCount,
+          score: score,
+          topic: updatedQuiz.topic,
+        },
+      });
+
+      // Update chat's updatedAt
+      await ctx.db.patch(message.chatId, {
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+import { internalMutation } from "./_generated/server";
+
+export const createAssistantMessage = internalMutation({
+  args: {
+    chatId: v.id("chats"),
+    content: v.string(),
+    quiz: v.optional(
+      v.object({
+        topic: v.string(),
+        questionCount: v.number(),
+        questions: v.array(
+          v.object({
+            id: v.string(),
+            question: v.string(),
+            options: v.array(
+              v.object({
+                key: v.union(
+                  v.literal("A"),
+                  v.literal("B"),
+                  v.literal("C"),
+                  v.literal("D"),
+                ),
+                text: v.string(),
+              }),
+            ),
+            correctKey: v.union(
+              v.literal("A"),
+              v.literal("B"),
+              v.literal("C"),
+              v.literal("D"),
+            ),
+            explanation: v.string(),
+            userAnswer: v.optional(
+              v.union(
+                v.literal("A"),
+                v.literal("B"),
+                v.literal("C"),
+                v.literal("D"),
+              ),
+            ),
+          }),
+        ),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    const messageId = await ctx.db.insert("messages", {
+      chatId: args.chatId,
+      role: "assistant",
+      content: args.content,
+      createdAt: Date.now(),
+      quiz: args.quiz,
+    });
+
+    // Update chat's updatedAt
+    await ctx.db.patch(args.chatId, {
+      updatedAt: Date.now(),
+    });
+
+    return messageId;
   },
 });

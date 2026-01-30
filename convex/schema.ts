@@ -65,6 +65,16 @@ export default defineSchema({
         ),
       }),
     ),
+    // Quiz Summary (optional)
+    isSummary: v.optional(v.boolean()),
+    summaryData: v.optional(
+      v.object({
+        correct: v.number(),
+        total: v.number(),
+        score: v.number(),
+        topic: v.string(),
+      }),
+    ),
   })
     .index("byChatId", ["chatId"])
     .index("byChatIdAndCreatedAt", ["chatId", "createdAt"]),

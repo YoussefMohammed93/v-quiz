@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useEffect, useState } from "react";
 import {
   type UserProfile,
   ProfileSettingsDialog,
@@ -19,15 +18,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChatView } from "@/components/chat-view";
 import { AppLayout } from "@/components/app-layout";
-import { useQuery, useMutation } from "convex/react";
 import { ChatSearch } from "@/components/chat-search";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useEffect, useState, useCallback } from "react";
 import { UpgradeDrawer } from "@/components/upgrade-drawer";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { MessageComposer } from "@/components/message-composer";
 
 export default function AppPage() {
   // Convex Queries
-  const chats = useQuery(api.chats.list) ?? [];
+  const chatsQuery = useQuery(api.chats.list); // Don't default to [] yet
+  const chats = chatsQuery ?? []; // Use for rendering
   const convexUser = useQuery(api.users.currentUser);
   const dailyUsage = useQuery(api.chats.getDailyUsage) ?? {
     used: 0,
@@ -46,6 +47,9 @@ export default function AppPage() {
   const [currentChatId, setCurrentChatId] = useState<Id<"chats"> | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Track if we've initialized the chat (to avoid re-initializing)
+  const [isChatInitialized, setIsChatInitialized] = useState(false);
 
   // Draft chats (frontend-only, not in database yet)
   const [draftChats, setDraftChats] = useState<
@@ -83,11 +87,23 @@ export default function AppPage() {
 
   // Query messages for current chat (skip if it's a draft)
   const isDraftChat = draftChats.some((d) => d.id === currentChatId);
-  const currentMessages =
-    useQuery(
-      api.chats.getMessages,
-      currentChatId && !isDraftChat ? { chatId: currentChatId } : "skip",
-    ) ?? [];
+  const shouldFetchMessages = !!(currentChatId && !isDraftChat);
+  const messagesQuery = useQuery(
+    api.chats.getMessages,
+    shouldFetchMessages ? { chatId: currentChatId } : "skip",
+  );
+
+  const currentMessages = messagesQuery ?? [];
+
+  // Global loading state: Waiting for initialization OR waiting for chat list
+  const isGlobalLoading = !isChatInitialized || chatsQuery === undefined;
+
+  // Messages loading: Global loading OR specifically fetching messages for selected chat
+  const isMessagesLoading =
+    isGlobalLoading || (shouldFetchMessages && messagesQuery === undefined);
+
+  // Chat/Header loading: Global loading
+  const isChatsLoading = isGlobalLoading;
 
   const userProfile: UserProfile = convexUser
     ? {
@@ -108,35 +124,63 @@ export default function AppPage() {
 
   const currentChat = allChats.find((c) => c._id === currentChatId) || null;
 
-  // Intelligent session-based chat initialization
-  useEffect(() => {
-    // On first load, check sessionStorage for active chat
-    const sessionChatId = sessionStorage.getItem("activeChatId");
+  // Handlers - defined before useEffects that use them
+  const handleNewChat = useCallback(() => {
+    // Create a draft chat (frontend-only) that appears in sidebar immediately
+    const draftId = `draft-${Date.now()}`;
+    const newDraft = {
+      id: draftId,
+      title: "New Chat",
+      createdAt: Date.now(),
+      isDraft: true as const,
+    };
 
-    if (sessionChatId && chats.length > 0) {
-      // If we have a session chat and it exists in real chats, restore it
-      const sessionChat = chats.find((c) => c._id === sessionChatId);
-      if (sessionChat) {
-        setCurrentChatId(sessionChat._id);
+    setDraftChats((prev) => [newDraft, ...prev]);
+    setCurrentChatId(draftId as unknown as Id<"chats">);
+  }, []);
+
+  // Intelligent localStorage-based chat initialization
+  useEffect(() => {
+    // Only initialize once and wait for chats to load
+    if (isChatInitialized) return;
+
+    // Wait for chats query to complete (chatsQuery will be undefined while loading)
+    if (chatsQuery === undefined) return;
+
+    // Get stored chat ID from localStorage (persists across sessions)
+    const storedChatId = localStorage.getItem("activeChatId");
+
+    if (storedChatId && chats.length > 0) {
+      // Try to restore the stored chat
+      const storedChat = chats.find((c) => c._id === storedChatId);
+      if (storedChat) {
+        setCurrentChatId(storedChat._id);
+        setIsChatInitialized(true);
         return;
       }
     }
 
-    // Otherwise, create a new draft chat for fresh session
-    if (!currentChatId && chats.length >= 0) {
+    // Only create new chat if chats have loaded (not undefined) and we have no currentChatId
+    if (!currentChatId) {
       handleNewChat();
+      setIsChatInitialized(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount
+  }, [chatsQuery, chats.length, handleNewChat, isChatInitialized]); // Run when chats load
 
-  // Save current chat to sessionStorage whenever it changes
+  // Save current chat to localStorage whenever it changes
   useEffect(() => {
+    // Don't save/clear storage until we've fully initialized
+    if (!isChatInitialized) return;
+
     if (currentChatId && !isDraftChat) {
-      sessionStorage.setItem("activeChatId", currentChatId as string);
-    } else if (!currentChatId) {
-      sessionStorage.removeItem("activeChatId");
+      localStorage.setItem("activeChatId", currentChatId as string);
+    } else {
+      // If it's a draft chat (New Chat) or no chat selected, clear storage
+      // This ensures on refresh it defaults to creating a New Chat
+      localStorage.removeItem("activeChatId");
     }
-  }, [currentChatId, isDraftChat]);
+  }, [currentChatId, isDraftChat, isChatInitialized]);
 
   // Shortcuts
   useEffect(() => {
@@ -150,21 +194,6 @@ export default function AppPage() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
-
-  // Handlers
-  const handleNewChat = () => {
-    // Create a draft chat (frontend-only) that appears in sidebar immediately
-    const draftId = `draft-${Date.now()}`;
-    const newDraft = {
-      id: draftId,
-      title: "New Chat",
-      createdAt: Date.now(),
-      isDraft: true as const,
-    };
-
-    setDraftChats((prev) => [newDraft, ...prev]);
-    setCurrentChatId(draftId as unknown as Id<"chats">);
-  };
 
   const handleSelectChat = (chatId: Id<"chats">) => {
     setCurrentChatId(chatId);
@@ -239,12 +268,10 @@ export default function AppPage() {
     }
   };
 
-  const handleSendMessage = async ({
-    text,
-  }: {
-    text: string;
-    imageFile?: File | null;
-  }) => {
+  const generateAIResponse = useAction(api.ai.generateResponse);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+
+  const handleSendMessage = async ({ text }: { text: string }) => {
     if (!text.trim()) return;
 
     setIsSending(true);
@@ -287,8 +314,24 @@ export default function AppPage() {
       }
 
       setIsSending(false);
+
+      // Trigger AI response (don't await this if we want to unlock UI immediately,
+      // but we do want to show typing indicator)
+      setIsAiGenerating(true);
+      try {
+        await generateAIResponse({
+          chatId: chatId!,
+          userMessage: text.trim(),
+        });
+      } catch (aiError) {
+        console.error("AI Generation failed:", aiError);
+        toast.error("Failed to generate AI response");
+      } finally {
+        setIsAiGenerating(false);
+      }
     } catch (error) {
       setIsSending(false);
+      setIsAiGenerating(false);
 
       // Check if it's a limit error
       const errorMessage =
@@ -350,12 +393,15 @@ export default function AppPage() {
         userProfile={userProfile}
         onOpenProfile={() => setProfileDialogOpen(true)}
         isLoading={convexUser === undefined}
+        isChatLoading={isChatsLoading}
       >
         <div className="bg-muted/25 flex-1 flex flex-col min-h-0">
           <ChatView
             messages={currentMessages}
+            userAvatarUrl={userProfile.avatarUrl}
             onAnswerQuestion={handleAnswerQuestion}
-            isTyping={false}
+            isTyping={isAiGenerating}
+            isLoading={isMessagesLoading}
           />
           <MessageComposer
             onSend={handleSendMessage}
@@ -363,6 +409,8 @@ export default function AppPage() {
             dailyUsed={dailyUsage.used}
             dailyLimit={dailyUsage.limit === Infinity ? 999 : dailyUsage.limit}
             onUpgrade={handleUpgrade}
+            plan={userProfile.plan}
+            isLoading={isChatsLoading}
           />
         </div>
       </AppLayout>
