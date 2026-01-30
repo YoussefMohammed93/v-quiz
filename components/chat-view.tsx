@@ -58,7 +58,7 @@ export function ChatView({
           <div className="divide-y divide-border/50">
             {messages.map((message) => (
               <MessageBubble
-                key={message.id}
+                key={message._id}
                 message={message}
                 onAnswerQuestion={onAnswerQuestion}
               />

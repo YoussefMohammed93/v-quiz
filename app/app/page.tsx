@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -8,9 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useQuery } from "convex/react";
 import { useEffect, useState } from "react";
-import type { Chat, Message } from "./types";
 import {
   type UserProfile,
   ProfileSettingsDialog,
@@ -20,35 +19,75 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChatView } from "@/components/chat-view";
 import { AppLayout } from "@/components/app-layout";
-import { mockChats, mockMessages } from "./mock-data";
+import { useQuery, useMutation } from "convex/react";
 import { ChatSearch } from "@/components/chat-search";
+import type { Id } from "@/convex/_generated/dataModel";
 import { UpgradeDrawer } from "@/components/upgrade-drawer";
 import { MessageComposer } from "@/components/message-composer";
 
 export default function AppPage() {
-  const [chats, setChats] = useState<Chat[]>(mockChats);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(
-    mockChats[0]?.id || null,
-  );
-  const [messages, setMessages] =
-    useState<Record<string, Message[]>>(mockMessages);
-  const [dailyUsed, setDailyUsed] = useState(2);
-  const [dailyLimit] = useState(5);
+  // Convex Queries
+  const chats = useQuery(api.chats.list) ?? [];
+  const convexUser = useQuery(api.users.currentUser);
+  const dailyUsage = useQuery(api.chats.getDailyUsage) ?? {
+    used: 0,
+    limit: 5,
+    remaining: 5,
+  };
+
+  // Convex Mutations
+  const createChat = useMutation(api.chats.create);
+  const updateChatTitle = useMutation(api.chats.updateTitle);
+  const deleteChat = useMutation(api.chats.remove);
+  const sendMessage = useMutation(api.chats.sendMessage);
+  const answerQuestion = useMutation(api.chats.answerQuestion);
+
+  // Local State
+  const [currentChatId, setCurrentChatId] = useState<Id<"chats"> | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  // Draft chats (frontend-only, not in database yet)
+  const [draftChats, setDraftChats] = useState<
+    Array<{
+      id: string; // temporary ID
+      title: string;
+      createdAt: number;
+      isDraft: true;
+    }>
+  >([]);
+
+  // Merge draft chats with real chats for display
+  const allChats = [
+    ...draftChats.map((draft) => ({
+      _id: draft.id as unknown as Id<"chats">, // Use string ID for drafts
+      userId: "" as unknown as Id<"users">,
+      title: draft.title,
+      createdAt: draft.createdAt,
+      updatedAt: draft.createdAt,
+      isDraft: true,
+    })),
+    ...chats,
+  ].sort((a, b) => b.updatedAt - a.updatedAt);
 
   // Dialog states
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [chatToRename, setChatToRename] = useState<string | null>(null);
-  const [chatToDelete, setChatToDelete] = useState<string | null>(null);
+  const [chatToRename, setChatToRename] = useState<Id<"chats"> | null>(null);
+  const [chatToDelete, setChatToDelete] = useState<Id<"chats"> | null>(null);
   const [newChatTitle, setNewChatTitle] = useState("");
 
   // Profile State
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
 
-  const convexUser = useQuery(api.users.currentUser);
+  // Query messages for current chat (skip if it's a draft)
+  const isDraftChat = draftChats.some((d) => d.id === currentChatId);
+  const currentMessages =
+    useQuery(
+      api.chats.getMessages,
+      currentChatId && !isDraftChat ? { chatId: currentChatId } : "skip",
+    ) ?? [];
 
   const userProfile: UserProfile = convexUser
     ? {
@@ -67,10 +106,37 @@ export default function AppPage() {
         plan: "",
       };
 
-  const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
+  const currentChat = allChats.find((c) => c._id === currentChatId) || null;
 
-  const currentChat = chats.find((c) => c.id === currentChatId) || null;
-  const currentMessages = currentChatId ? messages[currentChatId] || [] : [];
+  // Intelligent session-based chat initialization
+  useEffect(() => {
+    // On first load, check sessionStorage for active chat
+    const sessionChatId = sessionStorage.getItem("activeChatId");
+
+    if (sessionChatId && chats.length > 0) {
+      // If we have a session chat and it exists in real chats, restore it
+      const sessionChat = chats.find((c) => c._id === sessionChatId);
+      if (sessionChat) {
+        setCurrentChatId(sessionChat._id);
+        return;
+      }
+    }
+
+    // Otherwise, create a new draft chat for fresh session
+    if (!currentChatId && chats.length >= 0) {
+      handleNewChat();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  // Save current chat to sessionStorage whenever it changes
+  useEffect(() => {
+    if (currentChatId && !isDraftChat) {
+      sessionStorage.setItem("activeChatId", currentChatId as string);
+    } else if (!currentChatId) {
+      sessionStorage.removeItem("activeChatId");
+    }
+  }, [currentChatId, isDraftChat]);
 
   // Shortcuts
   useEffect(() => {
@@ -87,24 +153,29 @@ export default function AppPage() {
 
   // Handlers
   const handleNewChat = () => {
-    const newChat: Chat = {
-      id: `chat-${Date.now()}`,
+    // Create a draft chat (frontend-only) that appears in sidebar immediately
+    const draftId = `draft-${Date.now()}`;
+    const newDraft = {
+      id: draftId,
       title: "New Chat",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: Date.now(),
+      isDraft: true as const,
     };
 
-    setChats((prev) => [newChat, ...prev]);
-    setCurrentChatId(newChat.id);
-    setMessages((prev) => ({ ...prev, [newChat.id]: [] }));
+    setDraftChats((prev) => [newDraft, ...prev]);
+    setCurrentChatId(draftId as unknown as Id<"chats">);
   };
 
-  const handleSelectChat = (chatId: string) => {
+  const handleSelectChat = (chatId: Id<"chats">) => {
     setCurrentChatId(chatId);
   };
 
-  const handleRenameChat = (chatId: string) => {
-    const chat = chats.find((c) => c.id === chatId);
+  const handleRenameChat = (chatId: Id<"chats">) => {
+    // Can't rename draft chats
+    const isDraft = draftChats.some((d) => d.id === chatId);
+    if (isDraft) return;
+
+    const chat = chats.find((c) => c._id === chatId);
     if (chat) {
       setChatToRename(chatId);
       setNewChatTitle(chat.title);
@@ -112,194 +183,149 @@ export default function AppPage() {
     }
   };
 
-  const handleRenameChatConfirm = () => {
+  const handleRenameChatConfirm = async () => {
     if (chatToRename && newChatTitle.trim()) {
-      setChats((prev) =>
-        prev.map((c) =>
-          c.id === chatToRename
-            ? {
-                ...c,
-                title: newChatTitle.trim(),
-                updatedAt: new Date().toISOString(),
-              }
-            : c,
-        ),
-      );
-      setRenameDialogOpen(false);
-      setChatToRename(null);
-      setNewChatTitle("");
+      try {
+        await updateChatTitle({
+          chatId: chatToRename,
+          title: newChatTitle.trim(),
+        });
+        setRenameDialogOpen(false);
+        setChatToRename(null);
+        setNewChatTitle("");
+        toast.success("Chat renamed successfully");
+      } catch (error) {
+        console.error("Failed to rename chat:", error);
+        toast.error("Failed to rename chat");
+      }
     }
   };
 
-  const handleDeleteChat = (chatId: string) => {
+  const handleDeleteChat = (chatId: Id<"chats">) => {
+    // If it's a draft, just remove from local state
+    const draftIndex = draftChats.findIndex((d) => d.id === chatId);
+    if (draftIndex !== -1) {
+      setDraftChats((prev) => prev.filter((d) => d.id !== chatId));
+      if (currentChatId === chatId) {
+        const remaining = allChats.filter((c) => c._id !== chatId);
+        setCurrentChatId(remaining[0]?._id || null);
+      }
+      return;
+    }
+
+    // Otherwise, show delete confirmation for real chat
     setChatToDelete(chatId);
     setDeleteDialogOpen(true);
   };
 
-  const handleDeleteChatConfirm = () => {
+  const handleDeleteChatConfirm = async () => {
     if (chatToDelete) {
-      setChats((prev) => prev.filter((c) => c.id !== chatToDelete));
-      setMessages((prev) => {
-        const next = { ...prev };
-        delete next[chatToDelete];
-        return next;
-      });
+      try {
+        await deleteChat({ chatId: chatToDelete });
 
-      if (currentChatId === chatToDelete) {
-        const remainingChats = chats.filter((c) => c.id !== chatToDelete);
-        setCurrentChatId(remainingChats[0]?.id || null);
+        // Switch to another chat if the deleted one was active
+        if (currentChatId === chatToDelete) {
+          const remainingChats = chats.filter((c) => c._id !== chatToDelete);
+          setCurrentChatId(remainingChats[0]?._id || null);
+        }
+
+        setDeleteDialogOpen(false);
+        setChatToDelete(null);
+        toast.success("Chat deleted successfully");
+      } catch (error) {
+        console.error("Failed to delete chat:", error);
+        toast.error("Failed to delete chat");
       }
-
-      setDeleteDialogOpen(false);
-      setChatToDelete(null);
     }
   };
 
-  const handleSendMessage = ({
+  const handleSendMessage = async ({
     text,
-    imageFile,
   }: {
     text: string;
     imageFile?: File | null;
   }) => {
-    if (!currentChatId || (!text && !imageFile)) return;
+    if (!text.trim()) return;
 
     setIsSending(true);
 
-    // Simulate sending delay
-    setTimeout(() => {
-      const userMessage: Message = {
-        id: `msg-${Date.now()}`,
-        role: "user",
-        content: text,
-        createdAt: new Date().toISOString(),
-        imageUrl: imageFile ? URL.createObjectURL(imageFile) : undefined,
-      };
+    try {
+      let chatId = currentChatId;
 
-      setMessages((prev) => ({
-        ...prev,
-        [currentChatId]: [...(prev[currentChatId] || []), userMessage],
-      }));
+      // Check if current chat is a draft
+      const draftChat = draftChats.find((d) => d.id === chatId);
 
-      setIsTyping(true);
-      setDailyUsed((prev) => prev + 1);
+      if (draftChat) {
+        // Create the chat in the database first
+        const newTitle = text.slice(0, 50) + (text.length > 50 ? "..." : "");
+        const realChatId = await createChat({ title: newTitle });
 
-      // Simulate AI response
-      setTimeout(() => {
-        const assistantMessage: Message = {
-          id: `msg-${Date.now() + 1}`,
-          role: "assistant",
-          content: `Thanks for your message! This is a mock response to: "${text}"`,
-          createdAt: new Date().toISOString(),
-        };
+        // Remove from draft chats
+        setDraftChats((prev) => prev.filter((d) => d.id !== draftChat.id));
 
-        setMessages((prev) => ({
-          ...prev,
-          [currentChatId]: [...(prev[currentChatId] || []), assistantMessage],
-        }));
+        // Update current chat ID to the real one
+        chatId = realChatId;
+        setCurrentChatId(realChatId);
+      }
 
-        setIsSending(false);
-        setIsTyping(false);
+      // Send user message (chatId is now guaranteed to be a real chat)
+      await sendMessage({
+        chatId: chatId!,
+        content: text.trim(),
+      });
 
-        // Update chat title if it's a new chat
-        const chat = chats.find((c) => c.id === currentChatId);
-        if (chat && chat.title === "New Chat" && text.trim()) {
+      // Update chat title if it's still "New Chat" (for non-draft existing chats)
+      if (!draftChat) {
+        const chat = chats.find((c) => c._id === chatId);
+        if (chat && chat.title === "New Chat") {
           const newTitle = text.slice(0, 50) + (text.length > 50 ? "..." : "");
-          setChats((prev) =>
-            prev.map((c) =>
-              c.id === currentChatId
-                ? { ...c, title: newTitle, updatedAt: new Date().toISOString() }
-                : c,
-            ),
-          );
+          await updateChatTitle({
+            chatId: chatId!,
+            title: newTitle,
+          });
         }
-      }, 1000);
-    }, 500);
+      }
+
+      setIsSending(false);
+    } catch (error) {
+      setIsSending(false);
+
+      // Check if it's a limit error
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (errorMessage === "DAILY_LIMIT_REACHED") {
+        toast.error("Daily message limit reached");
+        setUpgradeDrawerOpen(true);
+      } else {
+        console.error("Failed to send message:", error);
+        toast.error("Failed to send message");
+      }
+    }
   };
 
-  const handleAnswerQuestion = (
+  const handleAnswerQuestion = async (
     questionId: string,
     choice: "A" | "B" | "C" | "D",
   ) => {
+    // Can't answer questions in "new chat mode"
     if (!currentChatId) return;
 
-    // Check for completion using current state to avoid side-effects in updater
-    const currentChatMessages = messages[currentChatId] || [];
-    let shouldTriggerSummary = false;
-    let summaryResults = { correct: 0, total: 0, score: 0, topic: "" };
-
-    const targetMessage = currentChatMessages.find((m) =>
-      m.quiz?.questions.some((q) => q.id === questionId),
-    );
-
-    if (targetMessage?.quiz) {
-      const wasAlreadyFinished = targetMessage.quiz.questions.every(
-        (q) => q.userAnswer !== undefined,
+    try {
+      // Find the message with this question
+      const messageWithQuiz = currentMessages.find((m) =>
+        m.quiz?.questions.some((q) => q.id === questionId),
       );
 
-      const updatedQuestions = targetMessage.quiz.questions.map((q) =>
-        q.id === questionId ? { ...q, userAnswer: choice } : q,
-      );
-
-      const isNowFinished = updatedQuestions.every(
-        (q) => q.userAnswer !== undefined,
-      );
-
-      if (isNowFinished && !wasAlreadyFinished) {
-        shouldTriggerSummary = true;
-        const correctCount = updatedQuestions.filter(
-          (q) => q.userAnswer === q.correctKey,
-        ).length;
-        summaryResults = {
-          correct: correctCount,
-          total: updatedQuestions.length,
-          score: Math.round((correctCount / updatedQuestions.length) * 100),
-          topic: targetMessage.quiz.topic,
-        };
+      if (messageWithQuiz) {
+        await answerQuestion({
+          messageId: messageWithQuiz._id,
+          questionId,
+          answer: choice,
+        });
       }
-    }
-
-    setMessages((prev) => {
-      const chatMessages = [...(prev[currentChatId] || [])];
-      const updatedMessages = chatMessages.map((msg) => {
-        if (msg.quiz) {
-          return {
-            ...msg,
-            quiz: {
-              ...msg.quiz,
-              questions: msg.quiz.questions.map((q) =>
-                q.id === questionId ? { ...q, userAnswer: choice } : q,
-              ),
-            },
-          };
-        }
-        return msg;
-      });
-
-      return {
-        ...prev,
-        [currentChatId]: updatedMessages,
-      };
-    });
-
-    if (shouldTriggerSummary) {
-      setIsTyping(true);
-      setTimeout(() => {
-        const summaryMessage: Message = {
-          id: `summary-${Date.now()}`,
-          role: "assistant",
-          content: `Congratulations! You've completed the quiz on ${summaryResults.topic}.`,
-          createdAt: new Date().toISOString(),
-          isSummary: true,
-          summaryData: summaryResults,
-        };
-
-        setMessages((prev) => ({
-          ...prev,
-          [currentChatId]: [...(prev[currentChatId] || []), summaryMessage],
-        }));
-        setIsTyping(false);
-      }, 1500);
+    } catch (error) {
+      console.error("Failed to answer question:", error);
+      toast.error("Failed to save answer");
     }
   };
 
@@ -310,15 +336,15 @@ export default function AppPage() {
   return (
     <>
       <AppLayout
-        chats={chats}
+        chats={allChats}
         currentChatId={currentChatId}
         chatTitle={currentChat?.title || "New Chat"}
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
         onRenameChat={handleRenameChat}
         onDeleteChat={handleDeleteChat}
-        dailyUsed={dailyUsed}
-        dailyLimit={dailyLimit}
+        dailyUsed={dailyUsage.used}
+        dailyLimit={dailyUsage.limit === Infinity ? 999 : dailyUsage.limit}
         onUpgrade={handleUpgrade}
         onOpenSearch={() => setSearchOpen(true)}
         userProfile={userProfile}
@@ -329,20 +355,20 @@ export default function AppPage() {
           <ChatView
             messages={currentMessages}
             onAnswerQuestion={handleAnswerQuestion}
-            isTyping={isTyping}
+            isTyping={false}
           />
           <MessageComposer
             onSend={handleSendMessage}
             isSending={isSending}
-            dailyUsed={dailyUsed}
-            dailyLimit={dailyLimit}
+            dailyUsed={dailyUsage.used}
+            dailyLimit={dailyUsage.limit === Infinity ? 999 : dailyUsage.limit}
             onUpgrade={handleUpgrade}
           />
         </div>
       </AppLayout>
 
       <ChatSearch
-        chats={chats}
+        chats={allChats}
         open={searchOpen}
         onOpenChange={setSearchOpen}
         onSelectChat={handleSelectChat}

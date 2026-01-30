@@ -1,8 +1,11 @@
+import { Id } from "@/convex/_generated/dataModel";
+
 export type Chat = {
-  id: string;
+  _id: Id<"chats">;
+  userId: Id<"users">;
   title: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: number;
+  updatedAt: number;
 };
 
 export type MessageRole = "user" | "assistant";
@@ -22,19 +25,22 @@ export type QuizBlock = {
   questions: QuizQuestion[];
 };
 
+export type QuizSummaryData = {
+  correct: number;
+  total: number;
+  score: number;
+  topic: string;
+};
+
 export type Message = {
-  id: string;
+  _id: Id<"messages">;
+  chatId: Id<"chats">;
   role: MessageRole;
   content: string;
-  createdAt: string;
+  createdAt: number;
   quiz?: QuizBlock;
-  imageUrl?: string;
   isStreaming?: boolean;
   isSummary?: boolean;
-  summaryData?: {
-    correct: number;
-    total: number;
-    score: number;
-    topic: string;
-  };
+  summaryData?: QuizSummaryData;
+  imageUrl?: string;
 };

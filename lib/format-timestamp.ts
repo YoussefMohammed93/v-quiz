@@ -1,5 +1,5 @@
-export function formatTimestamp(dateString: string): string {
-  const date = new Date(dateString);
+export function formatTimestamp(dateValue: string | number): string {
+  const date = new Date(dateValue);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -11,7 +11,6 @@ export function formatTimestamp(dateString: string): string {
   if (diffHours < 24) return `${diffHours}h ago`;
   if (diffDays < 7) return `${diffDays}d ago`;
 
-  // Format as "Jan 28" for older dates
   const months = [
     "Jan",
     "Feb",
@@ -29,8 +28,8 @@ export function formatTimestamp(dateString: string): string {
   return `${months[date.getMonth()]} ${date.getDate()}`;
 }
 
-export function formatMessageTime(dateString: string): string {
-  const date = new Date(dateString);
+export function formatMessageTime(dateValue: string | number): string {
+  const date = new Date(dateValue);
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? "PM" : "AM";

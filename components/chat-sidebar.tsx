@@ -36,16 +36,17 @@ import { useClerk } from "@clerk/nextjs";
 import type { Chat } from "@/app/app/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Id } from "@/convex/_generated/dataModel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type ChatSidebarProps = {
   chats: Chat[];
-  currentChatId: string | null;
+  currentChatId: Id<"chats"> | null;
   onNewChat: () => void;
-  onSelectChat: (chatId: string) => void;
-  onRenameChat: (chatId: string) => void;
-  onDeleteChat: (chatId: string) => void;
+  onSelectChat: (chatId: Id<"chats">) => void;
+  onRenameChat: (chatId: Id<"chats">) => void;
+  onDeleteChat: (chatId: Id<"chats">) => void;
   onOpenSearch: () => void;
   dailyUsed: number;
   dailyLimit: number;
@@ -216,11 +217,11 @@ export function ChatSidebar({
                 </>
               ) : (
                 chats.map((chat) => {
-                  const isActive = chat.id === currentChatId;
+                  const isActive = chat._id === currentChatId;
                   return (
-                    <div key={chat.id} className="relative group">
+                    <div key={chat._id} className="relative group">
                       <div
-                        onClick={() => onSelectChat(chat.id)}
+                        onClick={() => onSelectChat(chat._id)}
                         className={cn(
                           "group relative flex items-start gap-2 rounded-xl px-3 py-2.5 cursor-pointer border border-transparent",
                           isActive
@@ -252,19 +253,21 @@ export function ChatSidebar({
                             align="start"
                             className="w-32 bg-secondary border-border/45"
                           >
+                            {chat.title !== "New Chat" && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onRenameChat(chat._id);
+                                }}
+                              >
+                                <Edit2 className="size-4" />
+                                Rename
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onRenameChat(chat.id);
-                              }}
-                            >
-                              <Edit2 className="size-4" />
-                              Rename
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDeleteChat(chat.id);
+                                onDeleteChat(chat._id);
                               }}
                               className="!hover:bg-muted/20 text-red-400 cursor-pointer"
                             >

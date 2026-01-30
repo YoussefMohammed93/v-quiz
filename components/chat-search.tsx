@@ -10,12 +10,13 @@ import {
 } from "@/components/ui/command";
 import type { Chat } from "@/app/app/types";
 import { MessageSquare } from "lucide-react";
+import type { Id } from "@/convex/_generated/dataModel";
 
 type ChatSearchProps = {
   chats: Chat[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectChat: (chatId: string) => void;
+  onSelectChat: (chatId: Id<"chats">) => void;
 };
 
 export function ChatSearch({
@@ -32,9 +33,9 @@ export function ChatSearch({
         <CommandGroup heading="Recent Chats">
           {chats.map((chat) => (
             <CommandItem
-              key={chat.id}
+              key={chat._id}
               onSelect={() => {
-                onSelectChat(chat.id);
+                onSelectChat(chat._id);
                 onOpenChange(false);
               }}
               className="cursor-pointer border-b border-border/75 last:border-none rounded-none"

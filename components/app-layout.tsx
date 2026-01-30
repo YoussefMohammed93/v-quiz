@@ -5,16 +5,17 @@ import { useState, useEffect } from "react";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { Menu, Sparkle, Edit2 } from "lucide-react";
+import type { Id } from "@/convex/_generated/dataModel";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 type AppLayoutProps = {
   chats: Chat[];
-  currentChatId: string | null;
+  currentChatId: Id<"chats"> | null;
   chatTitle: string;
   onNewChat: () => void;
-  onSelectChat: (chatId: string) => void;
-  onRenameChat: (chatId: string) => void;
-  onDeleteChat: (chatId: string) => void;
+  onSelectChat: (chatId: Id<"chats">) => void;
+  onRenameChat: (chatId: Id<"chats">) => void;
+  onDeleteChat: (chatId: Id<"chats">) => void;
   dailyUsed: number;
   dailyLimit: number;
   onUpgrade: () => void;
@@ -71,7 +72,7 @@ export function AppLayout({
     chats,
     currentChatId,
     onNewChat,
-    onSelectChat: (chatId: string) => {
+    onSelectChat: (chatId: Id<"chats">) => {
       onSelectChat(chatId);
       setIsSidebarOpen(false);
     },
@@ -122,7 +123,7 @@ export function AppLayout({
               <h2 className="text-lg font-semibold text-foreground truncate">
                 {chatTitle}
               </h2>
-              {currentChatId && (
+              {currentChatId && chatTitle !== "New Chat" && (
                 <button
                   className="cursor-pointer flex items-center justify-center size-8 rounded-full text-muted-foreground hover:bg-muted/30 hover:text-foreground shrink-0"
                   onClick={() => onRenameChat(currentChatId)}
