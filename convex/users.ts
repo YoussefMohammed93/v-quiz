@@ -77,6 +77,21 @@ export const updateUser = mutation({
   },
 });
 
+export const updatePlan = mutation({
+  args: {
+    plan: v.union(v.literal("free"), v.literal("basic"), v.literal("pro")),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    await ctx.db.patch(user._id, {
+      plan: args.plan,
+    });
+
+    return { success: true, plan: args.plan };
+  },
+});
+
 export const upsertFromClerk = internalMutation({
   args: { data: v.any() as Validator<UserJSON> },
   async handler(ctx, { data }) {

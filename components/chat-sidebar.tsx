@@ -378,7 +378,7 @@ export function ChatSidebar({
                     className="flex items-center gap-2 p-2 hover:bg-muted/15 rounded-md cursor-pointer transition-colors"
                   >
                     <ArrowUpCircle className="size-4 text-muted-foreground" />
-                    <span className="text-sm">Upgrade Plan</span>
+                    <span className="text-sm">Plans</span>
                   </div>
                   <div className="h-px bg-border/20 my-1" />
                   <div

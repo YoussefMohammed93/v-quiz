@@ -42,6 +42,7 @@ export default function AppPage() {
   const deleteChat = useMutation(api.chats.remove);
   const sendMessage = useMutation(api.chats.sendMessage);
   const answerQuestion = useMutation(api.chats.answerQuestion);
+  const updateUserPlan = useMutation(api.users.updatePlan);
 
   // Local State
   const [currentChatId, setCurrentChatId] = useState<Id<"chats"> | null>(null);
@@ -380,6 +381,19 @@ export default function AppPage() {
     setUpgradeDrawerOpen(true);
   };
 
+  const handlePlanUpgrade = async (plan: "free" | "basic" | "pro") => {
+    try {
+      await updateUserPlan({ plan });
+      toast.success(
+        `Successfully upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`,
+      );
+      setUpgradeDrawerOpen(false);
+    } catch (error) {
+      console.error("Failed to upgrade plan:", error);
+      toast.error("Failed to upgrade plan. Please try again.");
+    }
+  };
+
   return (
     <>
       <AppLayout
@@ -502,6 +516,8 @@ export default function AppPage() {
       <UpgradeDrawer
         open={upgradeDrawerOpen}
         onOpenChange={setUpgradeDrawerOpen}
+        currentPlan={userProfile.plan}
+        onUpgradePlan={handlePlanUpgrade}
       />
     </>
   );

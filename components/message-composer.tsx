@@ -98,22 +98,17 @@ export function MessageComposer({
             <Send className="size-5" />
           </Button>
         </div>
-        {!isPro &&
-          (isLimitReached ? (
-            <p className="mt-2 ml-1 text-sm text-muted">
-              Daily limit reached.{" "}
-              <button
-                onClick={onUpgrade}
-                className="text-primary cursor-pointer hover:underline"
-              >
-                Upgrade to continue
-              </button>
-            </p>
-          ) : (
-            <p className="mt-2 ml-1 text-sm text-muted">
-              Messages used today: {dailyUsed} of {dailyLimit}
-            </p>
-          ))}
+        {isLimitReached && (
+          <p className="mt-2 ml-1 text-sm text-muted">
+            Daily limit reached.{" "}
+            <button
+              onClick={onUpgrade}
+              className="text-primary cursor-pointer hover:underline"
+            >
+              Upgrade to continue
+            </button>
+          </p>
+        )}
       </div>
     </div>
   );

@@ -4,9 +4,9 @@ import type { Chat } from "@/app/app/types";
 import { useState, useEffect } from "react";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
-import { Menu, Sparkle, Edit2 } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { ChatHeaderSkeleton } from "@/components/chat-skeletons";
+import { Menu, Sparkle, Edit2, Star, SparkleIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 type AppLayoutProps = {
@@ -143,14 +143,30 @@ export function AppLayout({
               )}
             </div>
 
-            <Button
-              className="hidden md:flex rounded-full text-sm h-10 px-5"
-              variant="app"
-              onClick={onUpgrade}
-            >
-              <Sparkle className="size-4 fill-current" />
-              Upgrade Your Plan
-            </Button>
+            {userProfile.plan === "pro" ? (
+              <div className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-primary/20 to-primary/10 border border-primary/20 backdrop-blur-sm">
+                <Star className="size-4 text-primary fill-current" />
+                <span className="text-sm font-semibold font-mono bg-linear-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                  Pro Plan
+                </span>
+              </div>
+            ) : userProfile.plan === "basic" ? (
+              <div className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-blue-500/20 to-blue-500/10 border border-blue-500/15 backdrop-blur-sm">
+                <SparkleIcon className="size-4 text-blue-500 fill-current" />
+                <span className="text-sm font-semibold font-mono bg-linear-to-r from-blue-500 to-blue-400 bg-clip-text text-transparent">
+                  Basic Plan
+                </span>
+              </div>
+            ) : (
+              <Button
+                className="hidden md:flex rounded-full text-sm h-10 px-5"
+                variant="app"
+                onClick={onUpgrade}
+              >
+                <Sparkle className="size-4 fill-current" />
+                Upgrade Your Plan
+              </Button>
+            )}
           </div>
         </header>
 
