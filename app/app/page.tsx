@@ -269,6 +269,7 @@ export default function AppPage() {
   };
 
   const generateAIResponse = useAction(api.ai.generateResponse);
+  const generateChatTitle = useAction(api.ai.generateChatTitle);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
 
   const handleSendMessage = async ({ text }: { text: string }) => {
@@ -283,9 +284,8 @@ export default function AppPage() {
       const draftChat = draftChats.find((d) => d.id === chatId);
 
       if (draftChat) {
-        // Create the chat in the database first
-        const newTitle = text.slice(0, 50) + (text.length > 50 ? "..." : "");
-        const realChatId = await createChat({ title: newTitle });
+        // Create the chat in the database first with temporary title
+        const realChatId = await createChat({ title: "New Chat" });
 
         // Remove from draft chats
         setDraftChats((prev) => prev.filter((d) => d.id !== draftChat.id));
@@ -301,19 +301,23 @@ export default function AppPage() {
         content: text.trim(),
       });
 
-      // Update chat title if it's still "New Chat" (for non-draft existing chats)
-      if (!draftChat) {
-        const chat = chats.find((c) => c._id === chatId);
-        if (chat && chat.title === "New Chat") {
-          const newTitle = text.slice(0, 50) + (text.length > 50 ? "..." : "");
-          await updateChatTitle({
-            chatId: chatId!,
-            title: newTitle,
-          });
-        }
-      }
-
       setIsSending(false);
+
+      // Trigger AI-powered title generation in background (non-blocking)
+      // This replaces the simple text truncation approach
+      const chat = chats.find((c) => c._id === chatId);
+      const isFirstMessage = draftChat || (chat && chat.title === "New Chat");
+
+      if (isFirstMessage) {
+        // Don't await - let it run in background
+        generateChatTitle({
+          chatId: chatId!,
+          userMessage: text.trim(),
+        }).catch((titleError) => {
+          console.error("Failed to generate chat title:", titleError);
+          // Silently fail - chat will keep "New Chat" title
+        });
+      }
 
       // Trigger AI response (don't await this if we want to unlock UI immediately,
       // but we do want to show typing indicator)

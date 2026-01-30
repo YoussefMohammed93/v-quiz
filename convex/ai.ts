@@ -112,3 +112,89 @@ When users ask regular questions:
     return { content: cleanedContent, quiz };
   },
 });
+
+// Generate a concise title for a chat based on the first user message
+export const generateChatTitle = action({
+  args: {
+    chatId: v.id("chats"),
+    userMessage: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const apiKey = process.env.PERPLEXITY_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("Perplexity API key not configured");
+    }
+
+    try {
+      // Call Perplexity API with specialized title generation prompt
+      const response = await fetch(
+        "https://api.perplexity.ai/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "sonar",
+            messages: [
+              {
+                role: "system",
+                content: `You are a chat title generator. Given a user's message, create a short, descriptive title (3-5 words maximum) that captures the main topic or question. 
+
+Rules:
+- Return ONLY the title text, nothing else
+- No quotes, no punctuation at the end
+- Be concise and clear
+- Capture the essence of what the user is asking about
+- Use title case (capitalize main words)
+
+Examples:
+User: "Generate 5 MCQs about JavaScript" → "JavaScript Multiple Choice Quiz"
+User: "What is the capital of France?" → "France Capital Question"
+User: "Explain quantum computing to a 10-year-old" → "Quantum Computing Simplified"
+User: "How do I learn React?" → "Learning React Guide"`,
+              },
+              {
+                role: "user",
+                content: args.userMessage,
+              },
+            ],
+            temperature: 0.5,
+            max_tokens: 20,
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Perplexity API Error (Title Generation):", errorText);
+        throw new Error("Failed to generate chat title");
+      }
+
+      const data = await response.json();
+      let title = data.choices[0].message.content.trim();
+
+      // Clean up the title: remove quotes if present
+      title = title.replace(/^["']|["']$/g, "");
+
+      // Limit to 60 characters max
+      if (title.length > 60) {
+        title = title.substring(0, 57) + "...";
+      }
+
+      // Auto-update the chat title
+      await ctx.runMutation(internal.chats.autoUpdateChatTitle, {
+        chatId: args.chatId,
+        title,
+      });
+
+      return { title };
+    } catch (error) {
+      console.error("Failed to generate chat title:", error);
+      // Don't throw error - just return null and keep "New Chat" title
+      return { title: null };
+    }
+  },
+});

@@ -7,9 +7,9 @@ export function TypingIndicator() {
         Vquiz AI is thinking
       </span>
       <div className="flex items-center gap-1.5">
-        <div className="size-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
-        <div className="size-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
-        <div className="size-2 rounded-full bg-primary/60 animate-bounce" />
+        <div className="size-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+        <div className="size-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+        <div className="size-2 rounded-full bg-primary animate-bounce" />
       </div>
     </div>
   );

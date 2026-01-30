@@ -334,3 +334,28 @@ export const createAssistantMessage = internalMutation({
     return messageId;
   },
 });
+
+// Auto-update chat title (internal mutation called by AI action)
+export const autoUpdateChatTitle = internalMutation({
+  args: {
+    chatId: v.id("chats"),
+    title: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const chat = await ctx.db.get(args.chatId);
+
+    if (!chat) {
+      console.error("Chat not found for auto-update title");
+      return;
+    }
+
+    // Only update if the current title is still "New Chat"
+    // This prevents overwriting manually renamed chats
+    if (chat.title === "New Chat") {
+      await ctx.db.patch(args.chatId, {
+        title: args.title,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
