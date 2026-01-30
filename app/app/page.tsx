@@ -384,8 +384,9 @@ export default function AppPage() {
   const handlePlanUpgrade = async (plan: "free" | "basic" | "pro") => {
     try {
       await updateUserPlan({ plan });
+      const action = plan === "free" ? "downgraded" : "upgraded";
       toast.success(
-        `Successfully upgraded to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`,
+        `Successfully ${action} to ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan!`,
       );
       setUpgradeDrawerOpen(false);
     } catch (error) {

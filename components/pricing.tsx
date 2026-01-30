@@ -4,7 +4,9 @@ import gsap from "gsap";
 
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
 import { useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PricingBackground } from "./pricing-bg";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -50,6 +52,19 @@ const plans = [
 
 export function Pricing() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { userId } = useAuth();
+  const router = useRouter();
+
+  const handlePlanClick = (planName: string) => {
+    // Convert display name "Basic" -> "basic"
+    const planKey = planName.toLowerCase();
+
+    if (!userId) {
+      router.push(`/app/payment?plan=${planKey}`);
+    } else {
+      router.push(`/app/payment?plan=${planKey}`);
+    }
+  };
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -172,6 +187,7 @@ export function Pricing() {
               <Button
                 variant={plan.recommended ? "default" : "outline"}
                 className="w-full h-14 group-hover:shadow-glow group-hover:shadow-primary/20 transition-all duration-500"
+                onClick={() => handlePlanClick(plan.name)}
               >
                 {plan.cta}
               </Button>
