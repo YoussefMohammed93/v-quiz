@@ -1,17 +1,5 @@
 "use client";
 
-import { AppLayout } from "@/components/app-layout";
-import { ChatView } from "@/components/chat-view";
-import { MessageComposer } from "@/components/message-composer";
-import { ChatSearch } from "@/components/chat-search";
-import { UpgradeDrawer } from "@/components/upgrade-drawer";
-import {
-  ProfileSettingsDialog,
-  type UserProfile,
-} from "@/components/profile-settings-dialog";
-import { useEffect, useState } from "react";
-import { mockChats, mockMessages } from "./mock-data";
-import type { Chat, Message } from "./types";
 import {
   Dialog,
   DialogContent,
@@ -20,8 +8,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useQuery } from "convex/react";
+import { useEffect, useState } from "react";
+import type { Chat, Message } from "./types";
+import {
+  type UserProfile,
+  ProfileSettingsDialog,
+} from "@/components/profile-settings-dialog";
+import { api } from "@/convex/_generated/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ChatView } from "@/components/chat-view";
+import { AppLayout } from "@/components/app-layout";
+import { mockChats, mockMessages } from "./mock-data";
+import { ChatSearch } from "@/components/chat-search";
+import { UpgradeDrawer } from "@/components/upgrade-drawer";
+import { MessageComposer } from "@/components/message-composer";
 
 export default function AppPage() {
   const [chats, setChats] = useState<Chat[]>(mockChats);
@@ -45,11 +47,25 @@ export default function AppPage() {
 
   // Profile State
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: "Youssef Mohammed",
-    username: "youssefmohammed2093",
-    avatarUrl: "https://github.com/shadcn.png",
-  });
+
+  const convexUser = useQuery(api.users.currentUser);
+
+  const userProfile: UserProfile = convexUser
+    ? {
+        name:
+          convexUser.firstName && convexUser.lastName
+            ? `${convexUser.firstName} ${convexUser.lastName}`
+            : convexUser.email || "User",
+        username: convexUser.email?.split("@")[0] || "user",
+        avatarUrl: convexUser.imageUrl || "/placeholder.png",
+        plan: convexUser.plan,
+      }
+    : {
+        name: "",
+        username: "",
+        avatarUrl: "",
+        plan: "",
+      };
 
   const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
 
@@ -291,10 +307,6 @@ export default function AppPage() {
     setUpgradeDrawerOpen(true);
   };
 
-  const handleUpdateProfile = (newProfile: typeof userProfile) => {
-    setUserProfile(newProfile);
-  };
-
   return (
     <>
       <AppLayout
@@ -311,6 +323,7 @@ export default function AppPage() {
         onOpenSearch={() => setSearchOpen(true)}
         userProfile={userProfile}
         onOpenProfile={() => setProfileDialogOpen(true)}
+        isLoading={convexUser === undefined}
       >
         <div className="bg-muted/25 flex-1 flex flex-col min-h-0">
           <ChatView
@@ -407,7 +420,6 @@ export default function AppPage() {
         open={profileDialogOpen}
         onOpenChange={setProfileDialogOpen}
         initialProfile={userProfile}
-        onSave={handleUpdateProfile}
       />
       <UpgradeDrawer
         open={upgradeDrawerOpen}

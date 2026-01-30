@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -8,9 +9,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Camera } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useMutation } from "convex/react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import { Id } from "@/convex/_generated/dataModel";
 import { useEffect, useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -18,25 +22,27 @@ export type UserProfile = {
   name: string;
   username: string;
   avatarUrl?: string;
+  plan?: string;
 };
 
 type ProfileSettingsDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialProfile: UserProfile;
-  onSave: (profile: UserProfile) => void;
 };
 
 export function ProfileSettingsDialog({
   open,
   onOpenChange,
   initialProfile,
-  onSave,
 }: ProfileSettingsDialogProps) {
   const [name, setName] = useState(initialProfile.name);
-  const [username] = useState(initialProfile.username);
   const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatarUrl);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const generateUploadUrl = useMutation(api.users.generateUploadUrl);
+  const updateUser = useMutation(api.users.updateUser);
 
   // Reset form when dialog opens
   useEffect(() => {
@@ -44,17 +50,96 @@ export function ProfileSettingsDialog({
       if (initialProfile.name !== name) setName(initialProfile.name);
       if (initialProfile.avatarUrl !== avatarUrl)
         setAvatarUrl(initialProfile.avatarUrl);
+      setSelectedImage(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initialProfile]);
 
-  const handleSave = () => {
-    onSave({
-      name: name.trim() || initialProfile.name,
-      username,
-      avatarUrl,
-    });
+  const handleSave = async () => {
+    // 1. Close dialog immediately
     onOpenChange(false);
+
+    try {
+      // 2. Handle Image Upload if changed
+      let storageId: Id<"_storage"> | undefined;
+
+      if (selectedImage) {
+        // Show uploading toast
+        const uploadToastId = toast.loading("Uploading profile picture... 0%");
+
+        try {
+          // Get upload URL
+          const postUrl = await generateUploadUrl();
+
+          // Upload file using XHR for progress
+          const { storageId: uploadedStorageId } = await new Promise<{
+            storageId: string;
+          }>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", postUrl);
+            xhr.setRequestHeader("Content-Type", selectedImage.type);
+
+            xhr.upload.onprogress = (event) => {
+              if (event.lengthComputable) {
+                const percentComplete = Math.round(
+                  (event.loaded / event.total) * 100,
+                );
+                toast.loading(
+                  `Uploading profile picture... ${percentComplete}%`,
+                  {
+                    id: uploadToastId,
+                  },
+                );
+              }
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  resolve(response);
+                } catch {
+                  reject(new Error("Invalid response format"));
+                }
+              } else {
+                reject(new Error(`Upload failed: ${xhr.statusText}`));
+              }
+            };
+
+            xhr.onerror = () => reject(new Error("Network error"));
+            xhr.send(selectedImage);
+          });
+
+          storageId = uploadedStorageId as Id<"_storage">;
+
+          toast.dismiss(uploadToastId);
+        } catch (error) {
+          toast.dismiss(uploadToastId);
+          toast.error("Failed to upload image");
+          console.error(error);
+          return; // Stop if upload fails
+        }
+      }
+
+      // 3. Update User Profile
+      // Only show toast if name changed or just finished uploading
+      const isNameChanged = name.trim() !== initialProfile.name;
+
+      if (isNameChanged || storageId) {
+        await updateUser({
+          name: name.trim(),
+          avatarStorageId: storageId, // undefined if not changed, ensuring we don't clear existing
+        });
+
+        toast.success("Profile updated successfully!");
+
+        // Update parent state via callback if needed, but the live query will update UI automatically
+        // onSave({ ...initialProfile, ...updates }); -> onSave prop might not be needed for data sync if using Convex live query
+      }
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      toast.error("Failed to update profile");
+    }
   };
 
   const handleAvatarClick = () => {
@@ -64,6 +149,7 @@ export function ProfileSettingsDialog({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedImage(file);
       const url = URL.createObjectURL(file);
       setAvatarUrl(url);
     }
@@ -75,15 +161,18 @@ export function ProfileSettingsDialog({
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
         </DialogHeader>
-
         <div className="flex flex-col items-center gap-6 py-4">
           {/* Avatar Section */}
           <div
             className="relative group cursor-pointer"
             onClick={handleAvatarClick}
           >
-            <Avatar className="size-24 border-2 border-border">
-              <AvatarImage src={avatarUrl} alt={name} />
+            <Avatar className="size-28 border-2 border-border">
+              <AvatarImage
+                src={avatarUrl}
+                alt={name}
+                className="object-cover"
+              />
               <AvatarFallback className="text-2xl bg-primary/10 text-primary">
                 {name
                   .split(" ")
@@ -104,7 +193,6 @@ export function ProfileSettingsDialog({
               onChange={handleFileChange}
             />
           </div>
-
           <div className="w-full space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Display name</Label>
@@ -117,7 +205,6 @@ export function ProfileSettingsDialog({
               />
             </div>
           </div>
-
           <div className="w-full text-center text-sm text-muted">
             <p>
               Your profile helps people recognize you. Your display name is
@@ -125,7 +212,6 @@ export function ProfileSettingsDialog({
             </p>
           </div>
         </div>
-
         <DialogFooter>
           <Button
             variant="outlineApp"

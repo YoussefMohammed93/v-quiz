@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import type { Chat } from "@/app/app/types";
+import { useState, useEffect } from "react";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
 import { Menu, Sparkle, Edit2 } from "lucide-react";
@@ -23,8 +23,10 @@ type AppLayoutProps = {
     name: string;
     username: string;
     avatarUrl?: string;
+    plan?: string;
   };
   onOpenProfile: () => void;
+  isLoading?: boolean;
   children: React.ReactNode;
 };
 
@@ -42,6 +44,7 @@ export function AppLayout({
   onOpenSearch,
   userProfile,
   onOpenProfile,
+  isLoading,
   children,
 }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -82,6 +85,7 @@ export function AppLayout({
     onToggle: handleToggleCollapse,
     userProfile,
     onOpenProfile,
+    isLoading,
   };
 
   return (

@@ -24,6 +24,7 @@
   --border: #424242;
   --secondary: #1a1a1a;
   --muted: #808080;
+  --radius: 0.75rem;
 }
 
 .light {
