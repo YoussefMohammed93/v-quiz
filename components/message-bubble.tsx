@@ -8,6 +8,7 @@ import { CodeBlock } from "./code-block";
 import ReactMarkdown from "react-markdown";
 import { QuizSummary } from "./quiz-summary";
 import type { Message } from "@/app/app/types";
+import { FlashcardBlock } from "./flashcard-block";
 import { TypingIndicator } from "./typing-indicator";
 import { formatMessageTime } from "@/lib/format-timestamp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -80,65 +81,65 @@ export function MessageBubble({
                   remarkPlugins={[remarkGfm]}
                   components={{
                     // Headings with gradient colors and proper sizing
-                    h1: ({ node, ...props }) => (
+                    h1: ({ ...props }) => (
                       <h1
                         className="text-3xl font-bold font-mono mb-4 mt-6 text-foreground"
                         {...props}
                       />
                     ),
-                    h2: ({ node, ...props }) => (
+                    h2: ({ ...props }) => (
                       <h2
                         className="text-2xl font-bold font-mono mb-3 mt-5 text-foreground"
                         {...props}
                       />
                     ),
-                    h3: ({ node, ...props }) => (
+                    h3: ({ ...props }) => (
                       <h3
                         className="text-xl font-semibold font-mono mb-2 mt-4 text-foreground"
                         {...props}
                       />
                     ),
                     // Paragraphs with better spacing
-                    p: ({ node, ...props }) => (
+                    p: ({ ...props }) => (
                       <p
                         className="mb-4 leading-7 text-foreground/70"
                         {...props}
                       />
                     ),
                     // Unordered lists with custom bullets
-                    ul: ({ node, ...props }) => (
+                    ul: ({ ...props }) => (
                       <ul
                         className="mb-4 ml-6 space-y-2 list-none text-foreground/70"
                         {...props}
                       />
                     ),
                     // Ordered lists
-                    ol: ({ node, ...props }) => (
+                    ol: ({ ...props }) => (
                       <ol
                         className="mb-4 ml-6 space-y-2 list-decimal list-outside text-foreground/70"
                         {...props}
                       />
                     ),
                     // List items with custom styling
-                    li: ({ node, ...props }) => (
+                    li: ({ ...props }) => (
                       <li
                         className="pl-2 relative before:content-['•'] before:absolute before:-left-4 before:text-primary before:font-bold before:text-lg"
                         {...props}
                       />
                     ),
                     // Bold text with color
-                    strong: ({ node, ...props }) => (
+                    strong: ({ ...props }) => (
                       <strong
                         className="font-medium text-lg text-primary/90"
                         {...props}
                       />
                     ),
                     // Italic/emphasis
-                    em: ({ node, ...props }) => (
+                    em: ({ ...props }) => (
                       <em className="italic text-blue-200" {...props} />
                     ),
                     // Inline code with better styling
-                    code: ({ node, className, children, ...props }) => {
+                    code: ({ className, children, ...props }) => {
                       const match = /language-(\w+)/.exec(className || "");
                       const isCodeBlock = match && match[1];
 
@@ -151,11 +152,10 @@ export function MessageBubble({
                           />
                         );
                       }
-
                       // Inline code
                       return (
                         <code
-                          className="bg-red-400/10 text-red-400 px-1.5 py-[3.5px] rounded text-sm font-mono border border-red-400/20"
+                          className="bg-red-400/10 text-red-400 px-1.5 py-[3.5px] rounded text-sm font-mono"
                           {...props}
                         >
                           {children}
@@ -163,11 +163,11 @@ export function MessageBubble({
                       );
                     },
                     // Pre tag - just pass through
-                    pre: ({ node, children, ...props }) => {
+                    pre: ({ children }) => {
                       return <>{children}</>;
                     },
                     // Links with accent color
-                    a: ({ node, ...props }) => (
+                    a: ({ ...props }) => (
                       <a
                         target="_blank"
                         rel="noopener noreferrer"
@@ -176,14 +176,14 @@ export function MessageBubble({
                       />
                     ),
                     // Blockquotes
-                    blockquote: ({ node, ...props }) => (
+                    blockquote: ({ ...props }) => (
                       <blockquote
                         className="border-l-4 border-primary/50 pl-4 italic text-muted my-4"
                         {...props}
                       />
                     ),
                     // Tables
-                    table: ({ node, ...props }) => (
+                    table: ({ ...props }) => (
                       <div className="my-6 w-full overflow-y-auto rounded-lg border border-border/50">
                         <table
                           className="w-full text-left text-sm"
@@ -191,28 +191,28 @@ export function MessageBubble({
                         />
                       </div>
                     ),
-                    thead: ({ node, ...props }) => (
+                    thead: ({ ...props }) => (
                       <thead
                         className="bg-muted/30 text-foreground font-medium border-b border-border/50"
                         {...props}
                       />
                     ),
-                    tbody: ({ node, ...props }) => (
+                    tbody: ({ ...props }) => (
                       <tbody className="divide-y divide-border/30" {...props} />
                     ),
-                    tr: ({ node, ...props }) => (
+                    tr: ({ ...props }) => (
                       <tr
                         className="transition-colors hover:bg-muted/10 group"
                         {...props}
                       />
                     ),
-                    th: ({ node, ...props }) => (
+                    th: ({ ...props }) => (
                       <th
                         className="px-4 py-3 font-semibold text-foreground whitespace-nowrap"
                         {...props}
                       />
                     ),
-                    td: ({ node, ...props }) => (
+                    td: ({ ...props }) => (
                       <td className="px-4 py-3 align-top" {...props} />
                     ),
                   }}
@@ -226,6 +226,10 @@ export function MessageBubble({
                   quiz={message.quiz}
                   onAnswerQuestion={onAnswerQuestion}
                 />
+              )}
+
+              {message.flashcards && (
+                <FlashcardBlock flashcards={message.flashcards} />
               )}
 
               {message.isSummary && message.summaryData && (

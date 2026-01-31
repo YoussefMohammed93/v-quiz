@@ -329,6 +329,19 @@ export const createAssistantMessage = internalMutation({
         ),
       }),
     ),
+    flashcards: v.optional(
+      v.object({
+        topic: v.string(),
+        count: v.number(),
+        cards: v.array(
+          v.object({
+            id: v.string(),
+            front: v.string(),
+            back: v.string(),
+          }),
+        ),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const messageId = await ctx.db.insert("messages", {
@@ -337,6 +350,7 @@ export const createAssistantMessage = internalMutation({
       content: args.content,
       createdAt: Date.now(),
       quiz: args.quiz,
+      flashcards: args.flashcards,
     });
 
     // Update chat's updatedAt

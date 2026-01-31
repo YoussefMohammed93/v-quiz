@@ -65,6 +65,20 @@ export default defineSchema({
         ),
       }),
     ),
+    // Flashcard data (optional)
+    flashcards: v.optional(
+      v.object({
+        topic: v.string(),
+        count: v.number(),
+        cards: v.array(
+          v.object({
+            id: v.string(),
+            front: v.string(),
+            back: v.string(),
+          }),
+        ),
+      }),
+    ),
     // Quiz Summary (optional)
     isSummary: v.optional(v.boolean()),
     summaryData: v.optional(

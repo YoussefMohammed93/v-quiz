@@ -32,6 +32,18 @@ export type QuizSummaryData = {
   topic: string;
 };
 
+export type Flashcard = {
+  id: string;
+  front: string;
+  back: string;
+};
+
+export type FlashcardBlock = {
+  topic: string;
+  count: number;
+  cards: Flashcard[];
+};
+
 export type Message = {
   _id: Id<"messages">;
   chatId: Id<"chats">;
@@ -39,6 +51,7 @@ export type Message = {
   content: string;
   createdAt: number;
   quiz?: QuizBlock;
+  flashcards?: FlashcardBlock;
   isStreaming?: boolean;
   isSummary?: boolean;
   summaryData?: QuizSummaryData;

@@ -22,6 +22,18 @@ interface Quiz {
   questions: QuizQuestion[];
 }
 
+interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+}
+
+interface FlashcardBlock {
+  topic: string;
+  count: number;
+  cards: Flashcard[];
+}
+
 interface PerplexityResponse {
   choices: {
     message: {
@@ -112,10 +124,10 @@ export const generateResponse = action({
 
 ## HANDLING CONVERSATION
 When users send casual messages like greetings or expressions of gratitude:
-- **Greetings** (hi, hello, hey): Respond warmly. Example: "Hey there! 👋 Ready to learn something new or take a quiz? Let me know what you'd like to explore!"
-- **Thanks/Gratitude** (thank you, thanks, appreciate it): Acknowledge genuinely. Example: "You're welcome! 😊 I'm happy to help. Let me know if there's anything else you'd like to learn or quiz yourself on!"
+- **Greetings** (hi, hello, hey): Respond warmly. Example: "Hey there! 👋 Ready to learn something new, take a quiz, or practice with flashcards? Let me know what you'd like to explore!"
+- **Thanks/Gratitude** (thank you, thanks, appreciate it): Acknowledge genuinely. Example: "You're welcome! 😊 I'm happy to help. Let me know if there's anything else you'd like to learn, quiz yourself on, or review with flashcards!"
 - **Farewells** (bye, goodbye, see you): Respond kindly. Example: "See you later! 👋 Good luck with your learning, and come back anytime you want to practice!"
-- **Small talk**: Engage briefly but gently steer back to learning. Example: "I appreciate the chat! 😄 If you ever want to test your knowledge on a topic, just ask me for a quiz."
+- **Small talk**: Engage briefly but gently steer back to learning. Example: "I appreciate the chat! 😄 If you ever want to test your knowledge or review terms, just ask me for a quiz or some flashcards."
 - **Praise/Compliments**: Be humble and appreciative. Example: "Thanks so much! That means a lot. 🙏 I'm here whenever you need help learning or practicing."
 - **Confusion or unclear messages**: Ask for clarification politely. Example: "Hmm, I'm not quite sure what you mean. Could you rephrase that? I'd love to help!"
 
@@ -147,6 +159,26 @@ When users ask for quizzes (keywords: quiz, test, MCQ, questions, practice):
   }
 }
 
+## FLASHCARD GENERATION
+When users ask for flashcards (keywords: flashcards, cards, flip cards, practice cards):
+1. Generate the requested number of flashcards (default to 5 if not specified).
+2. Each flashcard should have a "front" (question, term, or concept) and a "back" (answer, definition, or explanation).
+3. Keep the "front" and "back" concise but informative.
+4. Format your response ONLY as this exact JSON structure (no extra text):
+{
+  "flashcards": {
+    "topic": "Topic Name",
+    "count": 5,
+    "cards": [
+      {
+        "id": "f1",
+        "front": "Term or Question",
+        "back": "Definition or Answer"
+      }
+    ]
+  }
+}
+
 ## ANSWERING QUESTIONS
 When users ask educational or factual questions:
 1. Provide helpful, accurate, and concise answers.
@@ -158,7 +190,7 @@ When users ask educational or factual questions:
 3. Break complex topics into digestible chunks.
 4. Provide examples when helpful.
 5. DO NOT include citation numbers like [1], [2], etc.
-6. End with a helpful follow-up, like offering a quiz or asking if they need more detail.
+6. End with a helpful follow-up, like offering a quiz, suggesting flashcards for review, or asking if they need more detail.
 
 ## RULES
 - Always be helpful and on-topic.
@@ -189,6 +221,7 @@ When users ask educational or factual questions:
 
     // Try to parse quiz if requested
     let quiz: Quiz | undefined = undefined;
+    let flashcards: FlashcardBlock | undefined = undefined;
 
     // Improved heuristic: check for both "quiz" and "questions" to reduce false positives
     if (content.includes('"quiz"') && content.includes('"questions"')) {
@@ -216,18 +249,45 @@ When users ask educational or factual questions:
       }
     }
 
-    // Clean up content: remove citations and the raw JSON block if quiz was successfully parsed
+    // Parse flashcards if present
+    if (content.includes('"flashcards"') && content.includes('"cards"')) {
+      try {
+        const jsonMatch =
+          content.match(/```json\n([\s\S]*?)\n```/) ||
+          content.match(/```\n([\s\S]*?)\n```/);
+
+        let jsonString = jsonMatch ? jsonMatch[1] : null;
+
+        if (!jsonString && content.trim().startsWith("{")) {
+          jsonString = content.trim();
+        }
+
+        if (jsonString) {
+          const parsed = JSON.parse(jsonString);
+          if (parsed.flashcards) {
+            flashcards = parsed.flashcards;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse flashcards JSON", e);
+      }
+    }
+
+    // Clean up content: remove citations and the raw JSON block if quiz/flashcards were successfully parsed
     let cleanedContent = content.replace(/\[\d+\]/g, "");
-    if (quiz) {
-      // Remove the JSON block from the displayed content to avoid clutter
+    if (quiz || flashcards) {
+      // Remove all JSON-like structures from the start of the first { to the last }
       cleanedContent = cleanedContent
+        .replace(/\{[\s\S]*\}/g, "")
         .replace(/```json\n[\s\S]*?\n```/g, "")
         .replace(/```\n[\s\S]*?\n```/g, "")
         .trim();
 
-      // If after removing JSON the content is empty, use a default prefix
-      if (!cleanedContent) {
-        cleanedContent = `Here's your quiz on ${quiz.topic}:`;
+      // Force the message to be the standard intro as requested by the user
+      if (quiz) {
+        cleanedContent = `Here is your quiz on "${quiz.topic}":`;
+      } else if (flashcards) {
+        cleanedContent = `Here are your flash cards on "${flashcards.topic}":`;
       }
     }
 
@@ -236,9 +296,10 @@ When users ask educational or factual questions:
       chatId: args.chatId,
       content: cleanedContent,
       quiz,
+      flashcards,
     });
 
-    return { content: cleanedContent, quiz };
+    return { content: cleanedContent, quiz, flashcards };
   },
 });
 
