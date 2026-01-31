@@ -342,6 +342,21 @@ export const createAssistantMessage = internalMutation({
         ),
       }),
     ),
+    trueFalseQuiz: v.optional(
+      v.object({
+        topic: v.string(),
+        questionCount: v.number(),
+        questions: v.array(
+          v.object({
+            id: v.string(),
+            question: v.string(),
+            correctAnswer: v.boolean(),
+            explanation: v.string(),
+            userAnswer: v.optional(v.boolean()),
+          }),
+        ),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const messageId = await ctx.db.insert("messages", {
@@ -351,6 +366,7 @@ export const createAssistantMessage = internalMutation({
       createdAt: Date.now(),
       quiz: args.quiz,
       flashcards: args.flashcards,
+      trueFalseQuiz: args.trueFalseQuiz,
     });
 
     // Update chat's updatedAt

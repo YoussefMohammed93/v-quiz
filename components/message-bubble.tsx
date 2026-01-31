@@ -9,6 +9,7 @@ import ReactMarkdown from "react-markdown";
 import { QuizSummary } from "./quiz-summary";
 import type { Message } from "@/app/app/types";
 import { FlashcardBlock } from "./flashcard-block";
+import { TrueFalseBlock } from "./true-false-block";
 import { TypingIndicator } from "./typing-indicator";
 import { formatMessageTime } from "@/lib/format-timestamp";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -230,6 +231,10 @@ export function MessageBubble({
 
               {message.flashcards && (
                 <FlashcardBlock flashcards={message.flashcards} />
+              )}
+
+              {message.trueFalseQuiz && (
+                <TrueFalseBlock trueFalseQuiz={message.trueFalseQuiz} />
               )}
 
               {message.isSummary && message.summaryData && (

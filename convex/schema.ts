@@ -79,6 +79,22 @@ export default defineSchema({
         ),
       }),
     ),
+    // True/False Quiz data (optional)
+    trueFalseQuiz: v.optional(
+      v.object({
+        topic: v.string(),
+        questionCount: v.number(),
+        questions: v.array(
+          v.object({
+            id: v.string(),
+            question: v.string(),
+            correctAnswer: v.boolean(),
+            explanation: v.string(),
+            userAnswer: v.optional(v.boolean()),
+          }),
+        ),
+      }),
+    ),
     // Quiz Summary (optional)
     isSummary: v.optional(v.boolean()),
     summaryData: v.optional(

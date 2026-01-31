@@ -44,6 +44,20 @@ export type FlashcardBlock = {
   cards: Flashcard[];
 };
 
+export type TrueFalseQuestion = {
+  id: string;
+  question: string;
+  correctAnswer: boolean;
+  userAnswer?: boolean;
+  explanation: string;
+};
+
+export type TrueFalseQuizBlock = {
+  topic: string;
+  questionCount: number;
+  questions: TrueFalseQuestion[];
+};
+
 export type Message = {
   _id: Id<"messages">;
   chatId: Id<"chats">;
@@ -52,6 +66,7 @@ export type Message = {
   createdAt: number;
   quiz?: QuizBlock;
   flashcards?: FlashcardBlock;
+  trueFalseQuiz?: TrueFalseQuizBlock;
   isStreaming?: boolean;
   isSummary?: boolean;
   summaryData?: QuizSummaryData;

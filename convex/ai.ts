@@ -34,6 +34,19 @@ interface FlashcardBlock {
   cards: Flashcard[];
 }
 
+interface TrueFalseQuestion {
+  id: string;
+  question: string;
+  correctAnswer: boolean;
+  explanation: string;
+}
+
+interface TrueFalseQuiz {
+  topic: string;
+  questionCount: number;
+  questions: TrueFalseQuestion[];
+}
+
 interface PerplexityResponse {
   choices: {
     message: {
@@ -159,6 +172,26 @@ When users ask for quizzes (keywords: quiz, test, MCQ, questions, practice):
   }
 }
 
+## TRUE/FALSE QUIZ GENERATION
+When users ask for True/False questions (keywords: true or false, true/false, T/F):
+1. Generate the requested number of true/false questions (default to 5 if not specified).
+2. Ensure a good mix of both True and False answers.
+3. Format your response ONLY as this exact JSON structure (no extra text):
+{
+  "trueFalseQuiz": {
+    "topic": "Topic Name",
+    "questionCount": 5,
+    "questions": [
+      {
+        "id": "tf1",
+        "question": "Statement to evaluate.",
+        "correctAnswer": true,
+        "explanation": "Detailed explanation."
+      }
+    ]
+  }
+}
+
 ## FLASHCARD GENERATION
 When users ask for flashcards (keywords: flashcards, cards, flip cards, practice cards):
 1. Generate the requested number of flashcards (default to 5 if not specified).
@@ -222,6 +255,7 @@ When users ask educational or factual questions:
     // Try to parse quiz if requested
     let quiz: Quiz | undefined = undefined;
     let flashcards: FlashcardBlock | undefined = undefined;
+    let trueFalseQuiz: TrueFalseQuiz | undefined = undefined;
 
     // Improved heuristic: check for both "quiz" and "questions" to reduce false positives
     if (content.includes('"quiz"') && content.includes('"questions"')) {
@@ -273,9 +307,36 @@ When users ask educational or factual questions:
       }
     }
 
-    // Clean up content: remove citations and the raw JSON block if quiz/flashcards were successfully parsed
+    // Parse True/False quiz if present
+    if (
+      content.includes('"trueFalseQuiz"') &&
+      content.includes('"correctAnswer"')
+    ) {
+      try {
+        const jsonMatch =
+          content.match(/```json\n([\s\S]*?)\n```/) ||
+          content.match(/```\n([\s\S]*?)\n```/);
+
+        let jsonString = jsonMatch ? jsonMatch[1] : null;
+
+        if (!jsonString && content.trim().startsWith("{")) {
+          jsonString = content.trim();
+        }
+
+        if (jsonString) {
+          const parsed = JSON.parse(jsonString);
+          if (parsed.trueFalseQuiz) {
+            trueFalseQuiz = parsed.trueFalseQuiz;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse trueFalseQuiz JSON", e);
+      }
+    }
+
+    // Clean up content: remove citations and the raw JSON block if quiz/flashcards/trueFalseQuiz were successfully parsed
     let cleanedContent = content.replace(/\[\d+\]/g, "");
-    if (quiz || flashcards) {
+    if (quiz || flashcards || trueFalseQuiz) {
       // Remove all JSON-like structures from the start of the first { to the last }
       cleanedContent = cleanedContent
         .replace(/\{[\s\S]*\}/g, "")
@@ -288,6 +349,8 @@ When users ask educational or factual questions:
         cleanedContent = `Here is your quiz on "${quiz.topic}":`;
       } else if (flashcards) {
         cleanedContent = `Here are your flash cards on "${flashcards.topic}":`;
+      } else if (trueFalseQuiz) {
+        cleanedContent = `Here are your True/False questions on "${trueFalseQuiz.topic}":`;
       }
     }
 
@@ -297,9 +360,10 @@ When users ask educational or factual questions:
       content: cleanedContent,
       quiz,
       flashcards,
+      trueFalseQuiz,
     });
 
-    return { content: cleanedContent, quiz, flashcards };
+    return { content: cleanedContent, quiz, flashcards, trueFalseQuiz };
   },
 });
 

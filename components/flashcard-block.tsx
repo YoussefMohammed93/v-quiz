@@ -63,7 +63,7 @@ export function FlashcardBlock({ flashcards }: FlashcardBlockProps) {
   return (
     <div className="mt-4 space-y-4 w-full max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-2 px-1">
-        <h3 className="text-xl font-bold text-foreground">
+        <h3 className="text-xl sm:text-2xl font-mono font-semibold text-foreground">
           {flashcards.topic}
         </h3>
         <span className="text-sm font-medium text-muted bg-secondary/50 px-3 py-1 rounded-full border border-border/50">
