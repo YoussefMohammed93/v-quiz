@@ -1,10 +1,12 @@
 "use client";
 
 import type { Chat } from "@/app/app/types";
+import type { Id } from "@/convex/_generated/dataModel";
+
 import { useState, useEffect } from "react";
 import { ChatSidebar } from "./chat-sidebar";
 import { Button } from "@/components/ui/button";
-import type { Id } from "@/convex/_generated/dataModel";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ChatHeaderSkeleton } from "@/components/chat-skeletons";
 import { Menu, Sparkle, Edit2, Star, SparkleIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -143,7 +145,11 @@ export function AppLayout({
               )}
             </div>
 
-            {userProfile.plan === "pro" ? (
+            {isLoading ? (
+              <div className="hidden md:block">
+                <Skeleton className="h-10 w-[150px] rounded-full" />
+              </div>
+            ) : userProfile.plan === "pro" ? (
               <div className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full bg-linear-to-r from-primary/20 to-primary/10 border border-primary/20 backdrop-blur-sm">
                 <Star className="size-4 text-primary fill-current" />
                 <span className="text-sm font-semibold font-mono bg-linear-to-r from-primary to-primary/80 bg-clip-text text-transparent">

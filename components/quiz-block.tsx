@@ -27,7 +27,7 @@ export function QuizBlock({ quiz, onAnswerQuestion }: QuizBlockProps) {
   };
 
   return (
-    <div className="mt-4 rounded-lg border border-border/45 bg-secondary/30 p-4">
+    <div className="rounded-lg border border-border/45 bg-secondary/30 p-4 last:mb-5">
       <div className="mb-4 border-b border-border pb-3">
         <h3 className="text-lg font-semibold text-foreground">{quiz.topic}</h3>
         <p className="text-sm text-muted">

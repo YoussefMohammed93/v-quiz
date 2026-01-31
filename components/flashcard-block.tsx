@@ -66,8 +66,8 @@ export function FlashcardBlock({ flashcards }: FlashcardBlockProps) {
         <h3 className="text-xl sm:text-2xl font-mono font-semibold text-foreground">
           {flashcards.topic}
         </h3>
-        <span className="text-sm font-medium text-muted bg-secondary/50 px-3 py-1 rounded-full border border-border/50">
-          {currentIndex + 1} / {totalCards}
+        <span className="flex gap-1 text-sm font-medium text-muted bg-secondary/50 px-3 py-1 rounded-full border border-border/50">
+          <span>{currentIndex + 1}</span> / <span>{totalCards}</span>
         </span>
       </div>
       {/* Flashcard Container with 3D Flip */}
@@ -151,7 +151,7 @@ export function FlashcardBlock({ flashcards }: FlashcardBlockProps) {
           <ChevronRight className="size-6" />
         </Button>
       </div>
-      <p className="text-center text-xs text-muted">
+      <p className="text-center text-xs text-muted pb-3.5">
         Click the card or the button below to flip
       </p>
     </div>

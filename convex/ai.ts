@@ -56,7 +56,7 @@ interface PerplexityResponse {
   }[];
 }
 
-// Generate a response from Perplexity
+// Generate a response from Perplexity (AI Action)
 export const generateResponse = action({
   args: {
     chatId: v.id("chats"),
@@ -230,7 +230,8 @@ When users ask educational or factual questions:
 - Never be rude, dismissive, or unhelpful.
 - If you don't know something, admit it honestly.
 - Keep responses focused and avoid unnecessary filler.
-- Match the user's energy (casual vs. formal).`,
+- Match the user's energy (casual vs. formal).
+- **CRITICAL: Always use Markdown format for links: [Link Description](URL). Never provide URLs as plain text.** Result should be clickable and elegant.`,
           },
           ...sanitizedHistory,
           {
@@ -337,14 +338,16 @@ When users ask educational or factual questions:
     // Clean up content: remove citations and the raw JSON block if quiz/flashcards/trueFalseQuiz were successfully parsed
     let cleanedContent = content.replace(/\[\d+\]/g, "");
     if (quiz || flashcards || trueFalseQuiz) {
-      // Remove all JSON-like structures from the start of the first { to the last }
+      // Remove any content between the first { and the last } that looks like our data models
+      // We use a more targeted replacement to avoid over-cleaning
       cleanedContent = cleanedContent
-        .replace(/\{[\s\S]*\}/g, "")
         .replace(/```json\n[\s\S]*?\n```/g, "")
         .replace(/```\n[\s\S]*?\n```/g, "")
+        // Handle cases where the AI might have outputted the JSON without code blocks
+        .replace(/\{[\s\S]*?"(quiz|flashcards|trueFalseQuiz)"[\s\S]*\}/g, "")
         .trim();
 
-      // Force the message to be the standard intro as requested by the user
+      // Force fixed prefixes for consistency
       if (quiz) {
         cleanedContent = `Here is your quiz on "${quiz.topic}":`;
       } else if (flashcards) {
@@ -355,15 +358,24 @@ When users ask educational or factual questions:
     }
 
     // Create assistant message in database
-    await ctx.runMutation(internal.chats.createAssistantMessage, {
-      chatId: args.chatId,
+    const messageId: string = await ctx.runMutation(
+      internal.chats.createAssistantMessage,
+      {
+        chatId: args.chatId,
+        content: cleanedContent,
+        quiz,
+        flashcards,
+        trueFalseQuiz,
+      },
+    );
+
+    return {
+      messageId,
       content: cleanedContent,
       quiz,
       flashcards,
       trueFalseQuiz,
-    });
-
-    return { content: cleanedContent, quiz, flashcards, trueFalseQuiz };
+    };
   },
 });
 

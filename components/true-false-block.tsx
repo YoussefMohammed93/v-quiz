@@ -82,7 +82,7 @@ export function TrueFalseBlock({ trueFalseQuiz }: TrueFalseBlockProps) {
   };
 
   return (
-    <div className="mt-4 space-y-4 w-full max-w-2xl mx-auto">
+    <div className="space-y-4 w-full max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="text-xl font-bold text-foreground">
@@ -239,7 +239,7 @@ export function TrueFalseBlock({ trueFalseQuiz }: TrueFalseBlockProps) {
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-center justify-between gap-4 pb-3">
         <div className="flex gap-2">
           <Button
             variant="outlineApp"

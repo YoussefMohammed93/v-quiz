@@ -19,9 +19,10 @@ import { Button } from "@/components/ui/button";
 import { ChatView } from "@/components/chat-view";
 import { AppLayout } from "@/components/app-layout";
 import { ChatSearch } from "@/components/chat-search";
-import type { Id } from "@/convex/_generated/dataModel";
+import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useEffect, useState, useCallback } from "react";
 import { UpgradeDrawer } from "@/components/upgrade-drawer";
+import type { Message, QuizQuestion } from "@/app/app/types";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { MessageComposer } from "@/components/message-composer";
 
@@ -46,6 +47,9 @@ export default function AppPage() {
 
   // Local State
   const [currentChatId, setCurrentChatId] = useState<Id<"chats"> | null>(null);
+  const [lastGeneratedMessageId, setLastGeneratedMessageId] = useState<
+    string | null
+  >(null);
   const [isSending, setIsSending] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -74,6 +78,9 @@ export default function AppPage() {
     })),
     ...chats,
   ].sort((a, b) => b.updatedAt - a.updatedAt);
+
+  // Type for generic chat objects
+  type GenericChat = (typeof allChats)[0];
 
   // Dialog states
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
@@ -197,6 +204,9 @@ export default function AppPage() {
   }, []);
 
   const handleSelectChat = (chatId: Id<"chats">) => {
+    if (chatId !== currentChatId) {
+      setLastGeneratedMessageId(null);
+    }
     setCurrentChatId(chatId);
   };
 
@@ -205,7 +215,7 @@ export default function AppPage() {
     const isDraft = draftChats.some((d) => d.id === chatId);
     if (isDraft) return;
 
-    const chat = chats.find((c) => c._id === chatId);
+    const chat = chats.find((c: Doc<"chats">) => c._id === chatId);
     if (chat) {
       setChatToRename(chatId);
       setNewChatTitle(chat.title);
@@ -237,7 +247,7 @@ export default function AppPage() {
     if (draftIndex !== -1) {
       setDraftChats((prev) => prev.filter((d) => d.id !== chatId));
       if (currentChatId === chatId) {
-        const remaining = allChats.filter((c) => c._id !== chatId);
+        const remaining = allChats.filter((c: GenericChat) => c._id !== chatId);
         setCurrentChatId(remaining[0]?._id || null);
       }
       return;
@@ -255,7 +265,9 @@ export default function AppPage() {
 
         // Switch to another chat if the deleted one was active
         if (currentChatId === chatToDelete) {
-          const remainingChats = chats.filter((c) => c._id !== chatToDelete);
+          const remainingChats = chats.filter(
+            (c: Doc<"chats">) => c._id !== chatToDelete,
+          );
           setCurrentChatId(remainingChats[0]?._id || null);
         }
 
@@ -306,7 +318,7 @@ export default function AppPage() {
 
       // Trigger AI-powered title generation in background (non-blocking)
       // This replaces the simple text truncation approach
-      const chat = chats.find((c) => c._id === chatId);
+      const chat = chats.find((c: Doc<"chats">) => c._id === chatId);
       const isFirstMessage = draftChat || (chat && chat.title === "New Chat");
 
       if (isFirstMessage) {
@@ -324,11 +336,15 @@ export default function AppPage() {
       // but we do want to show typing indicator)
       setIsAiGenerating(true);
       try {
-        await generateAIResponse({
+        const result = (await generateAIResponse({
           chatId: chatId!,
           userMessage: text.trim(),
           messageId,
-        });
+        })) as { messageId: string; content: string };
+
+        if (result && result.messageId) {
+          setLastGeneratedMessageId(result.messageId);
+        }
       } catch (aiError) {
         console.error("AI Generation failed:", aiError);
         toast.error("Failed to generate AI response");
@@ -361,8 +377,8 @@ export default function AppPage() {
 
     try {
       // Find the message with this question
-      const messageWithQuiz = currentMessages.find((m) =>
-        m.quiz?.questions.some((q) => q.id === questionId),
+      const messageWithQuiz = currentMessages.find((m: Message) =>
+        m.quiz?.questions.some((q: QuizQuestion) => q.id === questionId),
       );
 
       if (messageWithQuiz) {
@@ -418,6 +434,8 @@ export default function AppPage() {
         <div className="bg-muted/25 flex-1 flex flex-col min-h-0">
           <ChatView
             messages={currentMessages}
+            chatId={currentChatId as string}
+            lastGeneratedMessageId={lastGeneratedMessageId}
             userAvatarUrl={userProfile.avatarUrl}
             onAnswerQuestion={handleAnswerQuestion}
             isTyping={isAiGenerating}

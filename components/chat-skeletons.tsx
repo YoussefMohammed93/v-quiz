@@ -4,22 +4,22 @@ export function ChatMessagesSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-4 max-w-3xl mx-auto w-full">
       {/* User Message Skeleton (Styled like a card) */}
-      <div className="grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 px-4 py-6 bg-muted/10 rounded-3xl border border-muted/15">
+      <div className="grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 px-4 sm:px-5 py-6 bg-muted/10 rounded-[28px] border border-muted/10 w-full sm:w-fit sm:max-w-[85%]">
         <Skeleton className="size-10 rounded-full shrink-0" /> {/* Avatar */}
-        <div className="contents md:block md:flex-1 md:min-w-0">
+        <div className="contents md:block md:flex-1 md:min-w-0 pr-5">
           <div className="flex items-center gap-2 mb-2 col-start-2 self-center">
             <Skeleton className="h-4 w-12 rounded" /> {/* Name */}
             <Skeleton className="h-3 w-8 rounded" /> {/* Time */}
           </div>
           <div className="col-span-2 md:col-auto mt-2 md:mt-0 space-y-2">
-            <Skeleton className="h-4 w-[90%]" />
-            <Skeleton className="h-4 w-[75%]" />
+            <Skeleton className="h-4 w-[180px]" />
+            <Skeleton className="h-4 w-[140px]" />
           </div>
         </div>
       </div>
 
       {/* AI Message Skeleton (Transparent) */}
-      <div className="grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 px-0 md:px-4 bg-transparent">
+      <div className="grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 px-0 md:px-4 bg-transparent w-full">
         <Skeleton className="size-10 rounded-full shrink-0" /> {/* Avatar */}
         <div className="contents md:block md:flex-1 md:min-w-0">
           <div className="flex items-center gap-2 mb-2 col-start-2 self-center">
@@ -37,15 +37,15 @@ export function ChatMessagesSkeleton() {
       </div>
 
       {/* User Message Skeleton (Styled like a card) */}
-      <div className="grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 px-4 py-6 bg-muted/10 rounded-3xl border border-muted/15">
+      <div className="grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 px-4 sm:px-5 py-6 bg-muted/10 rounded-[28px] border border-muted/10 w-full sm:w-fit sm:max-w-[85%]">
         <Skeleton className="size-10 rounded-full shrink-0" /> {/* Avatar */}
-        <div className="contents md:block md:flex-1 md:min-w-0">
+        <div className="contents md:block md:flex-1 md:min-w-0 pr-5">
           <div className="flex items-center gap-2 mb-2 col-start-2 self-center">
             <Skeleton className="h-4 w-12 rounded" /> {/* Name */}
             <Skeleton className="h-3 w-8 rounded" /> {/* Time */}
           </div>
           <div className="col-span-2 md:col-auto mt-2 md:mt-0 space-y-2">
-            <Skeleton className="h-4 w-[60%]" />
+            <Skeleton className="h-4 w-[120px]" />
           </div>
         </div>
       </div>

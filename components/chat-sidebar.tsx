@@ -188,7 +188,14 @@ export function ChatSidebar({
                 )}
               >
                 <Search className={isCollapsed ? "size-5" : "size-4.5"} />
-                {!isCollapsed && "Search Chats"}
+                {!isCollapsed && (
+                  <>
+                    <span className="flex-1 text-left">Search Chats</span>
+                    <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border border-border/45 bg-muted/20 px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+                      Ctrl + K
+                    </kbd>
+                  </>
+                )}
               </button>
             </TooltipTrigger>
             {isCollapsed && (
@@ -205,7 +212,7 @@ export function ChatSidebar({
               Recent
             </h3>
           </div>
-          <ScrollArea className="flex-1 px-2">
+          <ScrollArea className="flex-1 px-2 overflow-auto">
             <div className="space-y-1 pb-4">
               {isLoading ? (
                 <>

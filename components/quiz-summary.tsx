@@ -17,7 +17,7 @@ export function QuizSummary({ data }: QuizSummaryProps) {
   const isGood = data.score >= 50 && data.score < 80;
 
   return (
-    <div className="mt-4 rounded-2xl overflow-hidden border border-border/45 bg-secondary/30 relative max-w-sm">
+    <div className="rounded-2xl overflow-hidden border border-border/45 bg-secondary/30 relative max-w-sm">
       <div
         className={cn(
           "h-16 flex items-center justify-center relative overflow-hidden bg-muted/15",

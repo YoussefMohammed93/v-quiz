@@ -11,7 +11,9 @@ import { ChatMessagesSkeleton } from "@/components/chat-skeletons";
 
 type ChatViewProps = {
   messages: Message[];
-  userAvatarUrl?: string; // Added userAvatarUrl
+  chatId: string | null;
+  userAvatarUrl?: string;
+  lastGeneratedMessageId?: string | null;
   onAnswerQuestion: (questionId: string, choice: "A" | "B" | "C" | "D") => void;
   isTyping?: boolean;
   isLoading?: boolean;
@@ -19,13 +21,18 @@ type ChatViewProps = {
 
 export function ChatView({
   messages,
-  userAvatarUrl, // Destructured
+  chatId,
+  userAvatarUrl,
+  lastGeneratedMessageId,
   onAnswerQuestion,
   isTyping = false,
   isLoading = false,
 }: ChatViewProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const prevMessagesCount = useRef(messages.length);
+  const prevIsTyping = useRef(isTyping);
+  const prevChatId = useRef(chatId);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -34,8 +41,36 @@ export function ChatView({
   };
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages.length, isTyping, isLoading]);
+    const hasMessagesNow = messages.length > 0;
+    const hadNoMessages = prevMessagesCount.current === 0;
+    const hasInitialMessages = hasMessagesNow && (hadNoMessages || isLoading);
+
+    const hasNewMessage = messages.length > prevMessagesCount.current;
+    const lastMessage = messages[messages.length - 1];
+    const isUserMessage = lastMessage?.role === "user";
+    const startedTyping = isTyping && !prevIsTyping.current;
+    const switchedChat = chatId !== prevChatId.current;
+
+    // Scroll if:
+    // 1. A new user message was added
+    // 2. The AI just started thinking
+    // 3. The user switched to a different chat
+    // 4. Initial messages for a chat just loaded (first time messages > 0)
+    if (
+      (hasNewMessage && isUserMessage) ||
+      startedTyping ||
+      switchedChat ||
+      (hasInitialMessages && switchedChat) ||
+      (hasMessagesNow && hadNoMessages && !isLoading)
+    ) {
+      // Use a small timeout to ensure DOM is rendered
+      setTimeout(scrollToBottom, 50);
+    }
+
+    prevMessagesCount.current = messages.length;
+    prevIsTyping.current = isTyping;
+    prevChatId.current = chatId;
+  }, [messages, isTyping, isLoading, chatId]);
 
   return (
     <div
@@ -62,22 +97,42 @@ export function ChatView({
             <h3 className="text-xl font-semibold text-foreground mb-2">
               Start a conversation
             </h3>
-            <p className="text-muted max-w-md">
-              Ask me anything or request a quiz on any topic. Try saying
-              &quot;Generate 5 MCQs about JavaScript&quot;
+            <p className="text-muted/80 max-w-lg">
+              Ask me anything or request a quiz on any topic. I can generate{" "}
+              <span className="font-semibold text-foreground font-mono">
+                MCQs
+              </span>
+              ,{" "}
+              <span className="font-semibold text-foreground font-mono">
+                flashcards
+              </span>
+              , or{" "}
+              <span className="font-semibold text-foreground font-mono">
+                True/False questions
+              </span>{" "}
+              for you.
+            </p>
+            <p className="text-muted-foreground/60 text-sm mt-4 italic">
+              Try: &quot;Generate 5 flashcards about React hooks&quot; or
+              &quot;Create a True/False quiz on Python basics&quot;
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border/50">
+          <div className="divide-y divide-border/50 flex flex-col">
             {messages.map((message) => (
               <MessageBubble
                 key={message._id}
                 message={message}
                 userAvatarUrl={userAvatarUrl}
+                isLastGenerated={message._id === lastGeneratedMessageId}
                 onAnswerQuestion={onAnswerQuestion}
               />
             ))}
-            {isTyping && <TypingIndicator />}
+            {isTyping && (
+              <div className="pb-[50vh]">
+                <TypingIndicator />
+              </div>
+            )}
           </div>
         )}
       </div>
