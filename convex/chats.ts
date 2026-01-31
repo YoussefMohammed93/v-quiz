@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { getCurrentUserOrThrow } from "./users";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery } from "./_generated/server";
 
 // Helper to get today's date in YYYY-MM-DD format
 function getTodayDate(): string {
@@ -56,6 +56,19 @@ export const getMessages = query({
       .withIndex("byChatIdAndCreatedAt", (q) => q.eq("chatId", args.chatId))
       .order("asc")
       .collect();
+  },
+});
+
+export const getRecentMessages = internalQuery({
+  args: { chatId: v.id("chats") },
+  handler: async (ctx, args) => {
+    const messages = await ctx.db
+      .query("messages")
+      .withIndex("byChatIdAndCreatedAt", (q) => q.eq("chatId", args.chatId))
+      .order("desc")
+      .take(10);
+
+    return messages.reverse();
   },
 });
 

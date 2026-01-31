@@ -4,6 +4,7 @@ import remarkGfm from "remark-gfm";
 
 import { cn } from "@/lib/utils";
 import { QuizBlock } from "./quiz-block";
+import { CodeBlock } from "./code-block";
 import ReactMarkdown from "react-markdown";
 import { QuizSummary } from "./quiz-summary";
 import type { Message } from "@/app/app/types";
@@ -30,7 +31,7 @@ export function MessageBubble({
         "grid grid-cols-[auto_1fr] gap-x-4 md:flex md:gap-4 last:mb-0 px-4 md:pr-0! py-6 first:mt-5",
         isUser
           ? "bg-muted/10 rounded-3xl pb-0 border border-muted/15"
-          : "px-0 md:px-4 bg-transparent mb-5",
+          : "px-0 md:px-4 bg-transparent pb-0 last:pb-5 mb-5",
       )}
     >
       <Avatar className="size-10 shrink-0">
@@ -137,19 +138,33 @@ export function MessageBubble({
                       <em className="italic text-blue-200" {...props} />
                     ),
                     // Inline code with better styling
-                    code: ({ node, ...props }) => {
-                      const isInline = "inline" in props && props.inline;
-                      return isInline ? (
+                    code: ({ node, className, children, ...props }) => {
+                      const match = /language-(\w+)/.exec(className || "");
+                      const isCodeBlock = match && match[1];
+
+                      if (isCodeBlock) {
+                        return (
+                          <CodeBlock
+                            language={match[1]}
+                            value={String(children).replace(/\n$/, "")}
+                            {...props}
+                          />
+                        );
+                      }
+
+                      // Inline code
+                      return (
                         <code
-                          className="bg-blue-500/20 text-blue-200 px-1.5 py-0.5 rounded text-sm font-mono border border-blue-500/30"
+                          className="bg-red-400/10 text-red-400 px-1.5 py-[3.5px] rounded text-sm font-mono border border-red-400/20"
                           {...props}
-                        />
-                      ) : (
-                        <code
-                          className="block bg-muted/30 p-4 rounded-lg text-sm font-mono text-blue-200 overflow-x-auto my-3 border border-border/50"
-                          {...props}
-                        />
+                        >
+                          {children}
+                        </code>
                       );
+                    },
+                    // Pre tag - just pass through
+                    pre: ({ node, children, ...props }) => {
+                      return <>{children}</>;
                     },
                     // Links with accent color
                     a: ({ node, ...props }) => (

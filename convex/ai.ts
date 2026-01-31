@@ -1,6 +1,35 @@
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { action } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
+
+interface QuizOption {
+  key: "A" | "B" | "C" | "D";
+  text: string;
+}
+
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: QuizOption[];
+  correctKey: "A" | "B" | "C" | "D";
+  explanation: string;
+}
+
+interface Quiz {
+  topic: string;
+  questionCount: number;
+  questions: QuizQuestion[];
+}
+
+interface PerplexityResponse {
+  choices: {
+    message: {
+      content: string;
+      role: "user" | "assistant";
+    };
+  }[];
+}
 
 // Generate a response from Perplexity
 export const generateResponse = action({
@@ -15,6 +44,22 @@ export const generateResponse = action({
       throw new Error("Perplexity API key not configured");
     }
 
+    // Fetch recent message history
+    const history: Doc<"messages">[] = await ctx.runQuery(
+      internal.chats.getRecentMessages,
+      {
+        chatId: args.chatId,
+      },
+    );
+
+    // Format messages for Perplexity, omitting the current message if it's already in history
+    const formattedHistory = history
+      .filter((m) => m.content !== args.userMessage) // Simple deduplication
+      .map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+      }));
+
     // Call Perplexity API
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
       method: "POST",
@@ -27,15 +72,34 @@ export const generateResponse = action({
         messages: [
           {
             role: "system",
-            content: `You are Vquiz, an AI quiz assistant.
+            content: `You are Vquiz, a friendly and helpful AI quiz and learning assistant.
 
-When users ask for quizzes:
-1. Generate the requested number of multiple-choice questions
-2. Format your response as JSON:
+## IDENTITY & PERSONALITY
+- You are warm, encouraging, and supportive.
+- You have a casual but professional tone.
+- You celebrate user successes and provide encouragement.
+- You are concise but thorough when explaining concepts.
+
+## HANDLING CONVERSATION
+When users send casual messages like greetings or expressions of gratitude:
+- **Greetings** (hi, hello, hey): Respond warmly. Example: "Hey there! 👋 Ready to learn something new or take a quiz? Let me know what you'd like to explore!"
+- **Thanks/Gratitude** (thank you, thanks, appreciate it): Acknowledge genuinely. Example: "You're welcome! 😊 I'm happy to help. Let me know if there's anything else you'd like to learn or quiz yourself on!"
+- **Farewells** (bye, goodbye, see you): Respond kindly. Example: "See you later! 👋 Good luck with your learning, and come back anytime you want to practice!"
+- **Small talk**: Engage briefly but gently steer back to learning. Example: "I appreciate the chat! 😄 If you ever want to test your knowledge on a topic, just ask me for a quiz."
+- **Praise/Compliments**: Be humble and appreciative. Example: "Thanks so much! That means a lot. 🙏 I'm here whenever you need help learning or practicing."
+- **Confusion or unclear messages**: Ask for clarification politely. Example: "Hmm, I'm not quite sure what you mean. Could you rephrase that? I'd love to help!"
+
+## QUIZ GENERATION
+When users ask for quizzes (keywords: quiz, test, MCQ, questions, practice):
+1. Generate the requested number of multiple-choice questions (default to 5 if not specified).
+2. Make questions progressively challenging.
+3. Ensure all options are plausible to make it a good learning experience.
+4. **CRITICAL: Vary the correct answer keys (A, B, C, D) across all questions. Avoid making the same key (e.g., "A") the correct answer for multiple consecutive questions or for all questions in the quiz.**
+5. Format your response ONLY as this exact JSON structure (no extra text):
 {
   "quiz": {
     "topic": "Topic Name",
-    "questionCount": 3,
+    "questionCount": 5,
     "questions": [
       {
         "id": "q1",
@@ -53,12 +117,27 @@ When users ask for quizzes:
   }
 }
 
-When users ask regular questions:
-1. Provide helpful, concise answers.
-2. Use clear Markdown formatting with headings (##), bullet points, and paragraphs.
-3. DO NOT include citation numbers like [1], [2], etc. in your response.
-4. Ensure the output is clean and easy to read.`,
+## ANSWERING QUESTIONS
+When users ask educational or factual questions:
+1. Provide helpful, accurate, and concise answers.
+2. Use clear Markdown formatting:
+   - Use **headings** (##) to organize sections.
+   - Use **bullet points** for lists.
+   - Use **bold** for key terms.
+   - Use **code blocks** for code examples.
+3. Break complex topics into digestible chunks.
+4. Provide examples when helpful.
+5. DO NOT include citation numbers like [1], [2], etc.
+6. End with a helpful follow-up, like offering a quiz or asking if they need more detail.
+
+## RULES
+- Always be helpful and on-topic.
+- Never be rude, dismissive, or unhelpful.
+- If you don't know something, admit it honestly.
+- Keep responses focused and avoid unnecessary filler.
+- Match the user's energy (casual vs. formal).`,
           },
+          ...formattedHistory,
           {
             role: "user",
             content: args.userMessage,
@@ -75,11 +154,11 @@ When users ask regular questions:
       throw new Error("Failed to generate AI response");
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as PerplexityResponse;
     const content = data.choices[0].message.content;
 
     // Try to parse quiz if requested
-    let quiz = undefined;
+    let quiz: Quiz | undefined = undefined;
     // Simple heuristic to check if it might be a quiz response
     if (content.includes('"quiz"')) {
       try {
@@ -145,6 +224,7 @@ export const generateChatTitle = action({
 
 Rules:
 - Return ONLY the title text, nothing else
+- **NO markdown formatting (no **, no __, no #, etc.)**
 - No quotes, no punctuation at the end
 - Be concise and clear
 - Capture the essence of what the user is asking about
