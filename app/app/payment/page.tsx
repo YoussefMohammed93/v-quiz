@@ -15,11 +15,11 @@ import { useAuth } from "@clerk/nextjs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState, Suspense } from "react";
 import { PricingBackground } from "@/components/pricing-bg";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Check, ChevronLeft, CreditCard } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 // Plan data
 const PLANS = {
@@ -29,8 +29,9 @@ const PLANS = {
     description: "Perfect for getting started",
     features: [
       "5 AI messages per day",
-      "MCQ quizzes inside chat",
-      "1 image per message",
+      "MCQs, Flashcards & T/F",
+      "Interactive chat feedback",
+      "Rename and delete chats",
     ],
   },
   basic: {
@@ -39,8 +40,9 @@ const PLANS = {
     description: "For serious learners",
     features: [
       "50 AI messages per day",
-      "Image analysis for questions",
+      "MCQs, Flashcards & T/F",
       "Priority quiz generation",
+      "Rename and delete chats",
     ],
   },
   pro: {
@@ -48,9 +50,9 @@ const PLANS = {
     price: 4.99,
     description: "Ultimate power for pros",
     features: [
-      "Unlimited AI messages",
+      "Unlimited messages (fair use)",
       "Advanced quiz history & stats",
-      "Faster responses",
+      "Faster responses & better models",
       "Priority support",
     ],
   },
@@ -208,11 +210,6 @@ function PaymentPageContent() {
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 blur-3xl rounded-full group-hover:bg-primary/30 transition-all duration-700" />
 
             <div className="relative">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="px-3 py-1 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider border border-primary/20">
-                  Selected Plan
-                </span>
-              </div>
               <h2 className="text-4xl font-sentient mb-2">{plan.name}</h2>
               <p className="text-muted-foreground text-base mb-6">
                 {plan.description}

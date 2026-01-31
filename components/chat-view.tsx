@@ -1,12 +1,11 @@
 "use client";
 
-import Image from "next/image";
-
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import type { Message } from "@/app/app/types";
 import { MessageBubble } from "./message-bubble";
 import { TypingIndicator } from "./typing-indicator";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { ChatMessagesSkeleton } from "@/components/chat-skeletons";
 
 type ChatViewProps = {
@@ -87,17 +86,8 @@ export function ChatView({
           <ChatMessagesSkeleton />
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-            <Image
-              src="/robot.png"
-              alt="Robot"
-              width={120}
-              height={120}
-              className="pb-5"
-            />
-            <h3 className="text-xl font-semibold text-foreground mb-2">
-              Start a conversation
-            </h3>
-            <p className="text-foreground/60 max-w-lg">
+            <DotLottieReact src="./RobotSaludando.lottie" loop autoplay />
+            <p className="text-foreground/60 max-w-lg text-base sm:text-lg">
               Ask me anything or request a quiz on any topic. I can generate{" "}
               <span className="font-semibold text-foreground font-mono">
                 MCQs
@@ -112,8 +102,8 @@ export function ChatView({
               </span>{" "}
               for you.
             </p>
-            <p className="text-foreground/60 text-base mt-4 italic">
-              Try: &quot;Generate 5 flashcards about React hooks&quot; or
+            <p className="text-foreground/60 text-sm sm:text-base mt-4 italic">
+              Try: &quot;Generate 5 flashcards about React.js hooks&quot; or
               &quot;Create a True/False quiz on Python basics&quot;
             </p>
           </div>
