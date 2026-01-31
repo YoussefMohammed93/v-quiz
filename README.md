@@ -1,84 +1,61 @@
-# Vquiz
+# 🎓 Vquiz: AI-Powered Learning Evolution
 
-**AI-powered quiz and chat app for modern learners.**
+> **Transform any topic into interactive AI quizzes instantly.**
 
-Vquiz transforms any topic into interactive AI quizzes. Built with Next.js 16, Convex, Clerk, GSAP, and Three.js, it offers a seamless, chat-native learning experience.
+Vquiz is a cutting-edge, chat-native learning platform that leverages AI to generate personalized quizzes, analyze complex diagrams, and provide instant educational feedback. Built with a focus on **Visual Excellence** and **Seamless UX**, it's the future of interactive learning.
 
-## 🚀 Features
+---
 
-- **Chat-Native Quizzes**: Generate and answer multiple-choice questions (MCQs) directly within a familiar chat interface.
-- **Image Analysis**: Upload images (diagrams, code snippets) for AI-driven question generation and explanations.
-- **Instant Feedback**: Real-time "Correct/Wrong" feedback with detailed explanations for every answer.
-- **Progress Tracking**: Secure history of all chats and quiz attempts.
-- **Premium Design**: Immersive dark-mode aesthetic with 3D particles and smooth GSAP scroll animations.
-- **Flexible Pricing**: Free tier included, with affordable upgrade options for power users.
+## ✨ Features
+
+### 🧠 Intelligent Core
+
+- **Chat-Native Quizzes**: Seamlessly generate and solve MCQs within a conversational interface.
+- **AI Memory**: The assistant remembers your context, allowing for deep follow-up questions and refined learning paths.
+- **Typewriter Effect**: A smooth, natural delivery of AI responses for better readability.
+- **Image Intelligence**: Upload diagrams, handwritten notes, or code snippets for instant AI analysis and quiz generation.
+
+### 🎨 Premium Experience
+
+- **Immersive Design**: A sleek dark-mode aesthetic featuring **Three.js** 3D particle systems.
+- **Fluid Motion**: Ultra-smooth scrolling and interactions powered by **GSAP** and **Lenis**.
+- **Responsive Mastery**: Fully optimized for mobile, tablet, and desktop experiences.
+- **Real-time Sync**: Instance updates and chat persistence powered by **Convex**.
+
+### 🛠️ Educational Tools
+
+- **Instant Explanations**: Deep-dive into why an answer is correct or incorrect.
+- **Progress Tracking**: Effortlessly restore your learning sessions with robust chat persistence.
+- **Dynamic Pricing**: Tailored plans from Free to Pro to suit every learner's needs.
+
+---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
-- **Database**: [Convex](https://convex.dev/)
-- **Auth**: [Clerk](https://clerk.com/)
-- **Animations**: [GSAP](https://greensock.com/gsap/) & [Three.js](https://threejs.org/)
-- **Styling**: Tailwind CSS & Vanilla CSS variables
-- **Deployment**: Vercel (Recommended)
+### Frontend
 
-## 📂 Project Structure
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router & React 19)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) & Radix UI
+- **Animations**: [GSAP](https://greensock.com/gsap/), [Three.js](https://threejs.org/), & [Lenis](https://lenis.darkroom.engineering/)
+- **Components**: Shadcn UI (Customized)
 
-- `app/`: Next.js App Router pages and layouts.
-- `components/`: React components (UI, 3D scenes, sections).
-- `lib/`: Utility functions and shared helpers.
-- `public/`: Static assets (fonts, images).
+### Backend & Auth
 
-## 🔮 Roadmap / Sections
+- **Database & Functions**: [Convex](https://convex.dev/) (Real-time backend)
+- **Authentication**: [Clerk](https://clerk.com/)
+- **AI Integration**: Custom prompt engineering for quiz generation and memory.
 
-The landing page features the following sections:
+---
 
-1. **Hero**: Interactive 3D particle system with "Start for free" CTA.
-2. **How Vquiz Works**: 3-step guide (Ask, Get MCQs, Learn).
-3. **Features**: Highlights of chat, image support, and smart explanations.
-4. **Learning Journey**: Horizontal scroll storytelling "Your learning flow".
-5. **Benefits**: User testimonials and value proposition.
-6. **Pricing**: Free, Basic ($1.99), and Pro ($4.99) plans.
-7. **FAQ**: Common questions about limits, security, and features.
+## 🗺️ Roadmap
 
-## 📦 Getting Started
+- [x] AI Conversational Memory
+- [x] Responsive Chat Interface
+- [x] GSAP/Three.js Animations
+- [ ] AI-Generated Study Flashcards
 
-1. **Clone the repository**:
-
-   ```bash
-   git clone https://github.com/your-username/v-quiz.git
-   cd v-quiz
-   ```
-
-2. **Install dependencies**:
-
-   ```bash
-   npm install
-   # or
-   pnpm install
-   # or
-   yarn install
-   ```
-
-3. **Set up Environment Variables**:
-   Create a `.env.local` file and add your keys for Convex and Clerk:
-
-   ```env
-   CONVEX_DEPLOYMENT=...
-   NEXT_PUBLIC_CONVEX_URL=...
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
-   CLERK_SECRET_KEY=...
-   ```
-
-4. **Run the development server**:
-
-   ```bash
-   npm run dev
-   ```
-
-5. **Open the app**:
-   Visit [http://localhost:3000](http://localhost:3000) to see Vquiz in action.
+---
 
 ## 📜 License
 
-© Vquiz 2026. All rights reserved.
+© 2026 Vquiz. Precision-engineered for modern learners.
