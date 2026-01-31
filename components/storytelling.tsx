@@ -9,17 +9,17 @@ import { BorderBeam } from "@/components/ui/border-beam";
 const slides = [
   {
     title: "Start a new chat",
-    text: "Open a new chat on any topic of your choice and tell the AI what you want to learn today.",
+    text: "Open a new chat on any topic and tell the AI what you want to learn today.",
     icon: "01",
   },
   {
-    title: "Turn a topic into MCQs",
-    text: "Our AI processes your prompt and generates a series of tailored multiple-choice questions.",
+    title: "Pick your format",
+    text: "Choose between MCQs, Flashcards, or True/False challenges tailored to your material.",
     icon: "02",
   },
   {
     title: "Answer with feedback",
-    text: "Get instant results. Right or wrong, you'll see a clear explanation to help you master the material.",
+    text: "Get instant results with clear explanations that help you master the material faster.",
     icon: "03",
   },
   {

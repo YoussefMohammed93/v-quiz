@@ -9,19 +9,19 @@ const steps = [
   {
     title: "Ask in chat",
     description:
-      'Type a prompt in a familiar chat UI: "Make 5 MCQs about React Hooks" or "Quiz me on JavaScript closures."',
+      'Type a simple prompt like "Make 5 flashcards about React" or "Create a True/False quiz on Python basics."',
     icon: MessageSquare,
   },
   {
-    title: "Get instant MCQs",
+    title: "Instant Generation",
     description:
-      "The AI turns your topic into clean, multiple-choice questions with A/B/C/D options right inside the chat.",
+      "Vquiz instantly turns your topic into interactive MCQs, flashcards, or True/False challenges right in the chat.",
     icon: Zap,
   },
   {
     title: "Answer & learn",
     description:
-      'Choose answers, see instant "Correct/Wrong" feedback, and reveal explanations to actually understand the topic.',
+      "Interact with your quiz, get instant feedback, and reveal smart explanations to master any topic faster.",
     icon: BookOpen,
   },
 ];

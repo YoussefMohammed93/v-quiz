@@ -17,8 +17,8 @@ const plans = [
     price: "$0",
     features: [
       "5 AI messages per day",
-      "MCQ quizzes inside chat",
-      "1 image per message",
+      "MCQs, Flashcards & T/F",
+      "Interactive chat feedback",
       "Rename and delete chats",
     ],
     cta: "Start for free",
@@ -29,7 +29,7 @@ const plans = [
     price: "$1.99",
     features: [
       "50 AI messages per day",
-      "Image analysis for questions",
+      "MCQs, Flashcards & T/F",
       "Priority quiz generation",
       "Rename and delete chats",
     ],
@@ -146,7 +146,7 @@ export function Pricing() {
               key={i}
               className={cn(
                 "pricing-card relative flex flex-col p-10 bg-muted/20 backdrop-blur-xl border border-white/10 group transition-all duration-500 hover:bg-muted/15",
-                "[clip-path:polygon(24px_0,100%_0,100%_calc(100%_-_24px),calc(100%_-_24px)_100%,0_100%,0_24px)]",
+                "[clip-path:polygon(24px_0,100%_0,100%_calc(100%-24px),calc(100%-24px)_100%,0_100%,0_24px)]",
                 plan.recommended
                   ? "border-primary/50 shadow-glow shadow-primary/20 relative md:-top-5 z-10"
                   : "hover:border-primary/30",
@@ -176,7 +176,7 @@ export function Pricing() {
                 {plan.features.map((feature, idx) => (
                   <div
                     key={idx}
-                    className="flex gap-3 items-center text-sm font-mono text-foreground/60 group-hover:text-foreground/100 transition-colors"
+                    className="flex gap-3 items-center text-sm font-mono text-foreground/60 group-hover:text-foreground transition-colors"
                   >
                     <Check className="size-4 text-primary shrink-0" />
                     {feature}

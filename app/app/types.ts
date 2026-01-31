@@ -70,4 +70,8 @@ export type Message = {
   isStreaming?: boolean;
   isSummary?: boolean;
   summaryData?: QuizSummaryData;
+  feedback?: {
+    rating: "like" | "dislike";
+    comment?: string;
+  };
 };

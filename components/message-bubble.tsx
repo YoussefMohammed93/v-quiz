@@ -4,17 +4,22 @@ import { useState } from "react";
 import remarkGfm from "remark-gfm";
 import ReactMarkdown, { type Components } from "react-markdown";
 
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { QuizBlock } from "./quiz-block";
 import { CodeBlock } from "./code-block";
-import { ExternalLink } from "lucide-react";
+import { useMutation } from "convex/react";
 import { QuizSummary } from "./quiz-summary";
+import { api } from "@/convex/_generated/api";
 import { AITypewriter } from "./ai-typewriter";
 import type { Message } from "@/app/app/types";
+import { Button } from "@/components/ui/button";
+import { FeedbackDialog } from "./feedback-dialog";
 import { FlashcardBlock } from "./flashcard-block";
 import { TrueFalseBlock } from "./true-false-block";
 import { TypingIndicator } from "./typing-indicator";
 import { formatMessageTime } from "@/lib/format-timestamp";
+import { ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 type MessageBubbleProps = {
@@ -38,6 +43,36 @@ export function MessageBubble({
   const [isTextFinished, setIsTextFinished] = useState(
     isUser || !shouldTypewriter,
   );
+
+  const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+  const [currentRating, setCurrentRating] = useState<"like" | "dislike" | null>(
+    null,
+  );
+
+  const submitFeedback = useMutation(api.chats.submitFeedback);
+
+  const handleFeedbackClick = (rating: "like" | "dislike") => {
+    if (message.feedback) return; // Already feedbacked
+    setCurrentRating(rating);
+    setShowFeedbackDialog(true);
+  };
+
+  const handleFeedbackSubmit = async (
+    rating: "like" | "dislike",
+    comment?: string,
+  ) => {
+    try {
+      await submitFeedback({
+        messageId: message._id,
+        rating,
+        comment,
+      });
+      toast.success("Thank you for your feedback!");
+    } catch (error) {
+      console.error("Feedback error:", error);
+      toast.error("Failed to submit feedback.");
+    }
+  };
 
   // If the message is already in the database and not brand new (e.g. refresh),
   // we might want to skip the typewriter. For now, let's trigger it for all assistant messages.
@@ -263,12 +298,56 @@ export function MessageBubble({
                   {message.isSummary && message.summaryData && (
                     <QuizSummary data={message.summaryData} />
                   )}
+
+                  {/* Feedback Section for Assistant Messages */}
+                  {!isUser && !message.isStreaming && (
+                    <div className="flex items-center gap-2 pb-4 pt-2 group/feedback">
+                      {!message.feedback ? (
+                        <>
+                          <Button
+                            variant="outlineApp"
+                            size="icon"
+                            className="size-8 rounded-full bg-transparent border-none hover:bg-white/5 text-muted hover:text-primary transition-colors"
+                            onClick={() => handleFeedbackClick("like")}
+                          >
+                            <ThumbsUp className="size-4" />
+                          </Button>
+                          <Button
+                            variant="outlineApp"
+                            size="icon"
+                            className="size-8 rounded-full bg-transparent border-none hover:bg-white/5 text-muted hover:text-red-400 transition-colors"
+                            onClick={() => handleFeedbackClick("dislike")}
+                          >
+                            <ThumbsDown className="size-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+                          {message.feedback.rating === "like" ? (
+                            <ThumbsUp className="size-3.5 text-primary fill-primary/20" />
+                          ) : (
+                            <ThumbsDown className="size-3.5 text-red-400 fill-red-400/20" />
+                          )}
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-muted font-bold">
+                            Feedback Sent
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      <FeedbackDialog
+        open={showFeedbackDialog}
+        onOpenChange={setShowFeedbackDialog}
+        rating={currentRating}
+        onSubmit={handleFeedbackSubmit}
+      />
     </div>
   );
 }

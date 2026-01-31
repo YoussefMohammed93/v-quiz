@@ -7,26 +7,26 @@ import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { BorderBeam } from "@/components/ui/border-beam";
-import { MessageSquareText, Image as ImageIcon, Lightbulb } from "lucide-react";
+import { MessageSquareText, Layers, Lightbulb } from "lucide-react";
 
 const features = [
   {
-    title: "Chat-native quizzes",
+    title: "Flashcards & T/F",
     description:
-      "Generate and answer quizzes without ever leaving the chat. No forms, no complex setups.",
-    icon: MessageSquareText,
+      "Master any subject with interactive flashcards and direct True/False challenges inside the chat.",
+    icon: Layers,
   },
   {
-    title: "Image-aware questions",
+    title: "Smart Explanations",
     description:
-      "Attach one image per message so Vquiz can analyze diagrams, screenshots, or code snippets.",
-    icon: ImageIcon,
-  },
-  {
-    title: "Smart explanations",
-    description:
-      "Every wrong answer can show a detailed explanation so you learn why, not just what.",
+      "Get detailed AI explanations for every answer to help you deeply understand the core concepts.",
     icon: Lightbulb,
+  },
+  {
+    title: "Chat-Native Quizzes",
+    description:
+      "Generate quizzes and flashcards instantly without complex forms or setups. Just ask and learn.",
+    icon: MessageSquareText,
   },
 ];
 

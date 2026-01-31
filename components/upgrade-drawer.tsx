@@ -32,8 +32,8 @@ const plans = [
     price: "$0",
     features: [
       "5 AI messages per day",
-      "MCQ quizzes inside chat",
-      "1 image per message",
+      "MCQs, Flashcards & T/F",
+      "Interactive chat feedback",
       "Rename and delete chats",
     ],
     recommended: false,
@@ -44,7 +44,7 @@ const plans = [
     price: "$1.99",
     features: [
       "50 AI messages per day",
-      "Image analysis for questions",
+      "MCQs, Flashcards & T/F",
       "Priority quiz generation",
       "Rename and delete chats",
     ],
@@ -232,14 +232,14 @@ export function UpgradeDrawer({
             <AlertDialogCancel
               disabled={false}
               variant="outlineApp"
-              className="!h-10"
+              className="h-10"
               onClick={() => setShowDowngradeAlert(false)}
             >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               variant="app"
-              className="!h-10"
+              className="h-10"
               onClick={confirmDowngrade}
             >
               Confirm Downgrade

@@ -105,6 +105,13 @@ export default defineSchema({
         topic: v.string(),
       }),
     ),
+    // Feedback (optional)
+    feedback: v.optional(
+      v.object({
+        rating: v.union(v.literal("like"), v.literal("dislike")),
+        comment: v.optional(v.string()),
+      }),
+    ),
   })
     .index("byChatId", ["chatId"])
     .index("byChatIdAndCreatedAt", ["chatId", "createdAt"]),

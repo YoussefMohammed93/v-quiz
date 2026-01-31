@@ -97,7 +97,7 @@ export function ChatView({
             <h3 className="text-xl font-semibold text-foreground mb-2">
               Start a conversation
             </h3>
-            <p className="text-muted/80 max-w-lg">
+            <p className="text-foreground/60 max-w-lg">
               Ask me anything or request a quiz on any topic. I can generate{" "}
               <span className="font-semibold text-foreground font-mono">
                 MCQs
@@ -112,7 +112,7 @@ export function ChatView({
               </span>{" "}
               for you.
             </p>
-            <p className="text-muted-foreground/60 text-sm mt-4 italic">
+            <p className="text-foreground/60 text-base mt-4 italic">
               Try: &quot;Generate 5 flashcards about React hooks&quot; or
               &quot;Create a True/False quiz on Python basics&quot;
             </p>

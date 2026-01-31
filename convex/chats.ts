@@ -402,3 +402,28 @@ export const autoUpdateChatTitle = internalMutation({
     }
   },
 });
+
+export const submitFeedback = mutation({
+  args: {
+    messageId: v.id("messages"),
+    rating: v.union(v.literal("like"), v.literal("dislike")),
+    comment: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const message = await ctx.db.get(args.messageId);
+
+    if (!message) throw new Error("Message not found");
+
+    // Verify ownership via chat
+    const chat = await ctx.db.get(message.chatId);
+    if (!chat || chat.userId !== user._id) throw new Error("Unauthorized");
+
+    await ctx.db.patch(args.messageId, {
+      feedback: {
+        rating: args.rating,
+        comment: args.comment,
+      },
+    });
+  },
+});

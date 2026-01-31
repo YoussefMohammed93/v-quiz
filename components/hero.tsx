@@ -2,11 +2,11 @@
 
 import gsap from "gsap";
 import Link from "next/link";
-import { SignUpButton } from "@clerk/nextjs";
 
 import { GL } from "./gl";
 import { Pill } from "./pill";
 import { Button } from "./ui/button";
+import { SignUpButton } from "@clerk/nextjs";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useState, useRef, useEffect } from "react";
 
@@ -48,9 +48,12 @@ export function Hero() {
           AI‑POWERED QUIZ & CHAT
         </Pill>
 
-        <h1 className="text-4xl sm:text-6xl md:text-8xl font-sentient mb-20 gsap-reveal tracking-tight max-w-4xl mx-auto leading-[1.1]">
+        <h1 className="text-4xl sm:text-6xl md:text-8xl font-sentient mb-20 gsap-reveal tracking-tight max-w-5xl mx-auto leading-[1.1]">
           Turn any topic into <br className="hidden sm:block" />
-          <i className="font-light text-primary">interactive</i> AI quizzes.
+          <i className="font-light text-primary text-4xl sm:text-6xl md:text-8xl">
+            interactive
+          </i>{" "}
+          AI quizzes, flashcards & T/F.
         </h1>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 gsap-reveal w-full sm:w-auto">
