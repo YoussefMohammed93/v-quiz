@@ -36,6 +36,7 @@ export const generateResponse = action({
   args: {
     chatId: v.id("chats"),
     userMessage: v.string(),
+    messageId: v.optional(v.id("messages")),
   },
   handler: async (ctx, args) => {
     const apiKey = process.env.PERPLEXITY_API_KEY;
@@ -53,12 +54,41 @@ export const generateResponse = action({
     );
 
     // Format messages for Perplexity, omitting the current message if it's already in history
-    const formattedHistory = history
-      .filter((m) => m.content !== args.userMessage) // Simple deduplication
+    const rawHistory = history
+      .filter((m) => m._id !== args.messageId) // Deduplicate current message by ID
       .map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
       }));
+
+    // Sanitize history to ensure strict role alternation (required by Perplexity)
+    const sanitizedHistory: { role: "user" | "assistant"; content: string }[] =
+      [];
+    let lastRole: "user" | "assistant" | null = null;
+
+    for (const msg of rawHistory) {
+      if (msg.role !== lastRole) {
+        sanitizedHistory.push(msg);
+        lastRole = msg.role;
+      } else {
+        // If roles are consecutive, replace the previous one with the newer one
+        // to keep the most recent context
+        sanitizedHistory[sanitizedHistory.length - 1] = msg;
+      }
+    }
+
+    // Ensure the last role in history is NOT 'user' if we're about to append a 'user' message
+    if (
+      sanitizedHistory.length > 0 &&
+      sanitizedHistory[sanitizedHistory.length - 1].role === "user"
+    ) {
+      sanitizedHistory.pop();
+    }
+
+    // CRITICAL: The first message after the system message MUST be a 'user' message
+    while (sanitizedHistory.length > 0 && sanitizedHistory[0].role !== "user") {
+      sanitizedHistory.shift();
+    }
 
     // Call Perplexity API
     const response = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -137,7 +167,7 @@ When users ask educational or factual questions:
 - Keep responses focused and avoid unnecessary filler.
 - Match the user's energy (casual vs. formal).`,
           },
-          ...formattedHistory,
+          ...sanitizedHistory,
           {
             role: "user",
             content: args.userMessage,
@@ -159,32 +189,52 @@ When users ask educational or factual questions:
 
     // Try to parse quiz if requested
     let quiz: Quiz | undefined = undefined;
-    // Simple heuristic to check if it might be a quiz response
-    if (content.includes('"quiz"')) {
+
+    // Improved heuristic: check for both "quiz" and "questions" to reduce false positives
+    if (content.includes('"quiz"') && content.includes('"questions"')) {
       try {
         // Attempt to extract JSON from the response if it's wrapped in markdown code blocks
-        const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/) ||
-          content.match(/```\n([\s\S]*?)\n```/) || [null, content];
+        const jsonMatch =
+          content.match(/```json\n([\s\S]*?)\n```/) ||
+          content.match(/```\n([\s\S]*?)\n```/);
 
-        const jsonString = jsonMatch[1] || content;
+        let jsonString = jsonMatch ? jsonMatch[1] : null;
 
-        const parsed = JSON.parse(jsonString);
-        if (parsed.quiz) {
-          quiz = parsed.quiz;
+        // Fallback: If no code block, check if the whole response looks like JSON
+        if (!jsonString && content.trim().startsWith("{")) {
+          jsonString = content.trim();
+        }
+
+        if (jsonString) {
+          const parsed = JSON.parse(jsonString);
+          if (parsed.quiz) {
+            quiz = parsed.quiz;
+          }
         }
       } catch (e) {
         console.error("Failed to parse quiz JSON", e);
-        // Not a quiz or malformed JSON, just regular response
       }
     }
 
-    // Clean up content: remove citations like [1], [2]
-    const cleanedContent = content.replace(/\[\d+\]/g, "");
+    // Clean up content: remove citations and the raw JSON block if quiz was successfully parsed
+    let cleanedContent = content.replace(/\[\d+\]/g, "");
+    if (quiz) {
+      // Remove the JSON block from the displayed content to avoid clutter
+      cleanedContent = cleanedContent
+        .replace(/```json\n[\s\S]*?\n```/g, "")
+        .replace(/```\n[\s\S]*?\n```/g, "")
+        .trim();
+
+      // If after removing JSON the content is empty, use a default prefix
+      if (!cleanedContent) {
+        cleanedContent = `Here's your quiz on ${quiz.topic}:`;
+      }
+    }
 
     // Create assistant message in database
     await ctx.runMutation(internal.chats.createAssistantMessage, {
       chatId: args.chatId,
-      content: quiz ? `Here's your quiz on ${quiz.topic}:` : cleanedContent,
+      content: cleanedContent,
       quiz,
     });
 

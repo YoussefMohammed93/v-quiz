@@ -297,7 +297,7 @@ export default function AppPage() {
       }
 
       // Send user message (chatId is now guaranteed to be a real chat)
-      await sendMessage({
+      const messageId = await sendMessage({
         chatId: chatId!,
         content: text.trim(),
       });
@@ -327,6 +327,7 @@ export default function AppPage() {
         await generateAIResponse({
           chatId: chatId!,
           userMessage: text.trim(),
+          messageId,
         });
       } catch (aiError) {
         console.error("AI Generation failed:", aiError);
