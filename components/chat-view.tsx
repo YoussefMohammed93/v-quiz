@@ -1,11 +1,12 @@
 "use client";
 
+import Image from "next/image";
+
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 import type { Message } from "@/app/app/types";
 import { MessageBubble } from "./message-bubble";
 import { TypingIndicator } from "./typing-indicator";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { ChatMessagesSkeleton } from "@/components/chat-skeletons";
 
 type ChatViewProps = {
@@ -86,7 +87,15 @@ export function ChatView({
           <ChatMessagesSkeleton />
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
-            <DotLottieReact src="./RobotSaludando.lottie" loop autoplay />
+            <Image
+              src="/robot.gif"
+              alt="Robot"
+              width={150}
+              height={150}
+              quality={100}
+              loading="eager"
+              className="w-[150px] h-[150px] object-contain mx-auto"
+            />
             <p className="text-foreground/60 max-w-lg text-base sm:text-lg">
               Ask me anything or request a quiz on any topic. I can generate{" "}
               <span className="font-semibold text-foreground font-mono">
