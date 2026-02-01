@@ -145,12 +145,13 @@ When users send casual messages like greetings or expressions of gratitude:
 - **Confusion or unclear messages**: Ask for clarification politely. Example: "Hmm, I'm not quite sure what you mean. Could you rephrase that? I'd love to help!"
 
 ## QUIZ GENERATION
-When users ask for quizzes (keywords: quiz, test, MCQ, questions, practice):
-1. Generate the requested number of multiple-choice questions (default to 5 if not specified).
+When users ask for quizzes (keywords: quiz, test, MCQ, questions, practice, "Give me X questions"):
+1. Generate the requested number of multiple-choice questions (default to 5 if not specified). **If the user specifies a number (e.g., "10 MCQ questions"), you MUST generate exactly that number.**
 2. Make questions progressively challenging.
 3. Ensure all options are plausible to make it a good learning experience.
 4. **CRITICAL: Vary the correct answer keys (A, B, C, D) across all questions. Avoid making the same key (e.g., "A") the correct answer for multiple consecutive questions or for all questions in the quiz.**
-5. Format your response ONLY as this exact JSON structure (no extra text):
+5. **INTENT RECOGNITION**: Treat phrases like "Give me 10 MCQ questions" as a direct request for a quiz.
+6. Format your response ONLY as this exact JSON structure (no extra text):
 {
   "quiz": {
     "topic": "Topic Name",
@@ -240,7 +241,7 @@ When users ask educational or factual questions:
           },
         ],
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 8192,
       }),
     });
 
@@ -253,107 +254,168 @@ When users ask educational or factual questions:
     const data = (await response.json()) as PerplexityResponse;
     const content = data.choices[0].message.content;
 
+    // Helper to repair truncated JSON
+    const repairJson = (text: string) => {
+      const repaired = text.trim();
+      if (!repaired.startsWith("{")) return null;
+
+      const stack: ("{" | "[")[] = [];
+      let inString = false;
+      let escape = false;
+      let lastQuestionEnd = -1;
+
+      for (let i = 0; i < repaired.length; i++) {
+        const char = repaired[i];
+
+        if (char === '"' && !escape) {
+          inString = !inString;
+        } else if (!inString) {
+          if (char === "{") {
+            stack.push("{");
+          } else if (char === "}") {
+            stack.pop();
+            // If we just popped a question object (stack: {quiz, topic, questions, [)
+            if (stack.length === 3 && stack[2] === "[") {
+              lastQuestionEnd = i;
+            }
+          } else if (char === "[") {
+            stack.push("[");
+          } else if (char === "]") {
+            stack.pop();
+          }
+        }
+        escape = char === "\\" && !escape;
+      }
+
+      // If already balanced, return
+      if (stack.length === 0 && !inString) return repaired;
+
+      // REPAIR STRATEGY: Try to cut back to the last fully completed question
+      if (lastQuestionEnd !== -1) {
+        let result = repaired.substring(0, lastQuestionEnd + 1);
+        result += "]}"; // Close questions array and quiz/outer objects
+        return result;
+      }
+
+      // Fallback: Simple bracket closing
+      let result = repaired;
+      if (inString) result += '"';
+      while (stack.length > 0) {
+        const type = stack.pop();
+        result += type === "{" ? "}" : "]";
+      }
+      return result;
+    };
+
+    // Helper to extract and parse JSON from content
+    const extractAndParseJson = (
+      content: string,
+      type: "quiz" | "flashcards" | "trueFalseQuiz",
+    ) => {
+      console.log(`[AI] Attempting to extract ${type} from content...`);
+      try {
+        // 1. Try to find JSON in markdown code blocks (standard)
+        const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (codeBlockMatch) {
+          const jsonText = codeBlockMatch[1];
+          try {
+            const parsed = JSON.parse(jsonText);
+            if (parsed[type]) return parsed[type];
+          } catch (e) {
+            const repaired = repairJson(jsonText);
+            if (repaired) {
+              try {
+                const parsed = JSON.parse(repaired);
+                if (parsed[type]) {
+                  console.log(
+                    `[AI] Successfully extracted ${type} via repair.`,
+                  );
+                  return parsed[type];
+                }
+              } catch (e2) {
+                console.error("[AI] Failed to parse repaired code block JSON");
+              }
+            }
+          }
+        }
+
+        // 2. Direct extraction from content with repair logic
+        const firstBrace = content.indexOf("{");
+        if (firstBrace !== -1) {
+          const jsonCandidate = content.substring(firstBrace);
+          try {
+            const parsed = JSON.parse(jsonCandidate);
+            if (parsed[type]) return parsed[type];
+          } catch (e) {
+            const repaired = repairJson(jsonCandidate);
+            if (repaired) {
+              try {
+                const parsed = JSON.parse(repaired);
+                if (parsed[type]) {
+                  console.log(
+                    `[AI] Successfully extracted ${type} via repair.`,
+                  );
+                  return parsed[type];
+                }
+              } catch (e3) {
+                console.error("[AI] Failed to parse repaired raw JSON");
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error(`[AI] Error during ${type} extraction:`, e);
+      }
+      return undefined;
+    };
+
     // Try to parse quiz if requested
     let quiz: Quiz | undefined = undefined;
     let flashcards: FlashcardBlock | undefined = undefined;
     let trueFalseQuiz: TrueFalseQuiz | undefined = undefined;
 
-    // Improved heuristic: check for both "quiz" and "questions" to reduce false positives
-    if (content.includes('"quiz"') && content.includes('"questions"')) {
-      try {
-        // Attempt to extract JSON from the response if it's wrapped in markdown code blocks
-        const jsonMatch =
-          content.match(/```json\n([\s\S]*?)\n```/) ||
-          content.match(/```\n([\s\S]*?)\n```/);
+    // Detect if content contains JSON-like structures
+    const hasQuiz = content.includes('"quiz"');
+    const hasFlashcards = content.includes('"flashcards"');
+    const hasTrueFalse = content.includes('"trueFalseQuiz"');
 
-        let jsonString = jsonMatch ? jsonMatch[1] : null;
+    if (hasQuiz) quiz = extractAndParseJson(content, "quiz");
+    if (hasFlashcards) flashcards = extractAndParseJson(content, "flashcards");
+    if (hasTrueFalse)
+      trueFalseQuiz = extractAndParseJson(content, "trueFalseQuiz");
 
-        // Fallback: If no code block, check if the whole response looks like JSON
-        if (!jsonString && content.trim().startsWith("{")) {
-          jsonString = content.trim();
-        }
-
-        if (jsonString) {
-          const parsed = JSON.parse(jsonString);
-          if (parsed.quiz) {
-            quiz = parsed.quiz;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse quiz JSON", e);
-      }
-    }
-
-    // Parse flashcards if present
-    if (content.includes('"flashcards"') && content.includes('"cards"')) {
-      try {
-        const jsonMatch =
-          content.match(/```json\n([\s\S]*?)\n```/) ||
-          content.match(/```\n([\s\S]*?)\n```/);
-
-        let jsonString = jsonMatch ? jsonMatch[1] : null;
-
-        if (!jsonString && content.trim().startsWith("{")) {
-          jsonString = content.trim();
-        }
-
-        if (jsonString) {
-          const parsed = JSON.parse(jsonString);
-          if (parsed.flashcards) {
-            flashcards = parsed.flashcards;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse flashcards JSON", e);
-      }
-    }
-
-    // Parse True/False quiz if present
-    if (
-      content.includes('"trueFalseQuiz"') &&
-      content.includes('"correctAnswer"')
-    ) {
-      try {
-        const jsonMatch =
-          content.match(/```json\n([\s\S]*?)\n```/) ||
-          content.match(/```\n([\s\S]*?)\n```/);
-
-        let jsonString = jsonMatch ? jsonMatch[1] : null;
-
-        if (!jsonString && content.trim().startsWith("{")) {
-          jsonString = content.trim();
-        }
-
-        if (jsonString) {
-          const parsed = JSON.parse(jsonString);
-          if (parsed.trueFalseQuiz) {
-            trueFalseQuiz = parsed.trueFalseQuiz;
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse trueFalseQuiz JSON", e);
-      }
-    }
-
-    // Clean up content: remove citations and the raw JSON block if quiz/flashcards/trueFalseQuiz were successfully parsed
+    // Clean up content: remove citations and the raw JSON block
     let cleanedContent = content.replace(/\[\d+\]/g, "");
+
+    // If we extracted data, aggressively remove any trace of JSON from the displayed text
     if (quiz || flashcards || trueFalseQuiz) {
-      // Remove any content between the first { and the last } that looks like our data models
-      // We use a more targeted replacement to avoid over-cleaning
       cleanedContent = cleanedContent
-        .replace(/```json\n[\s\S]*?\n```/g, "")
-        .replace(/```\n[\s\S]*?\n```/g, "")
-        // Handle cases where the AI might have outputted the JSON without code blocks
-        .replace(/\{[\s\S]*?"(quiz|flashcards|trueFalseQuiz)"[\s\S]*\}/g, "")
+        // Remove code blocks
+        .replace(/```(?:json)?\s*[\s\S]*?```/g, "")
+        // Remove any bracketed block that looks like it contains the data we just parsed
+        .replace(/\{[\s\S]*?"(quiz|flashcards|trueFalseQuiz)"[\s\S]*?\}/g, "")
+        // Remove trailing commas and dots that sometimes get left behind
+        .replace(/^[,\.\s]+|[,\.\s]+$/g, "")
+        // Also remove any trailing partial JSON if it exists
+        .replace(/\{[\s\S]*$/g, "")
         .trim();
 
-      // Force fixed prefixes for consistency
-      if (quiz) {
-        cleanedContent = `Here is your quiz on "${quiz.topic}":`;
-      } else if (flashcards) {
-        cleanedContent = `Here are your flash cards on "${flashcards.topic}":`;
-      } else if (trueFalseQuiz) {
-        cleanedContent = `Here are your True/False questions on "${trueFalseQuiz.topic}":`;
+      // Create a nice looking intro message based on what was generated
+      const introParts: string[] = [];
+      if (quiz)
+        introParts.push(`a **multiple-choice quiz** on **${quiz.topic}**`);
+      if (flashcards)
+        introParts.push(`**flash cards** for **${flashcards.topic}**`);
+      if (trueFalseQuiz)
+        introParts.push(`a **True/False quiz** on **${trueFalseQuiz.topic}**`);
+
+      const mainIntro = `I've prepared ${introParts.join(" and ")} for you! 🚀`;
+
+      // Combine AI's natural text (if any remains) with our forced intro
+      if (cleanedContent && cleanedContent.length > 10) {
+        cleanedContent = `${cleanedContent}\n\n${mainIntro}`;
+      } else {
+        cleanedContent = mainIntro;
       }
     }
 
