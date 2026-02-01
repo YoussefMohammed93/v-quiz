@@ -389,7 +389,7 @@ export function ChatSidebar({
                   </div>
                   <div className="h-px bg-border/20 my-1" />
                   <div
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ redirectUrl: "/" })}
                     className="flex items-center gap-2 p-2 hover:bg-red-400/10 text-red-400 rounded-md cursor-pointer transition-colors"
                   >
                     <LogOut className="size-4" />
